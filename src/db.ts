@@ -1,10 +1,18 @@
 import { openDB, type DBSchema } from 'idb';
 
+interface MealItem {
+  name: string;
+  quantity: number;
+  unit: string;
+  calories: number;
+}
+
 interface Meals {
   id?: number;
   date: string; // ISO string YYYY-MM-DD
   name: string;
-  calories: number;
+  items?: MealItem[]; // New field for detailed items
+  calories: number; // Total calories (sum of items or manual)
   image?: Blob; // Stored image
 }
 
@@ -23,6 +31,13 @@ interface Weight {
 interface Settings {
   key: string;
   value: unknown;
+}
+
+interface Food {
+  id?: number;
+  name: string;
+  unit: string; // e.g., 'g', 'ml', 'unit', 'tbsp', 'tsp'
+  caloriesPerUnit: number;
 }
 
 interface DietaDB extends DBSchema {
@@ -45,28 +60,42 @@ interface DietaDB extends DBSchema {
     key: string;
     value: Settings;
   };
+  foods: {
+    key: number;
+    value: Food;
+    indexes: { 'by-name': string };
+  };
 }
 
 const DB_NAME = 'dieta-pwa-db';
-const DB_VERSION = 1;
+const DB_VERSION = 2; // Incremented version
 
 export const initDB = async () => {
   return openDB<DietaDB>(DB_NAME, DB_VERSION, {
-    upgrade(db) {
-      if (!db.objectStoreNames.contains('meals')) {
-        const store = db.createObjectStore('meals', { keyPath: 'id', autoIncrement: true });
-        store.createIndex('by-date', 'date');
-      }
-      if (!db.objectStoreNames.contains('water')) {
-        const store = db.createObjectStore('water', { keyPath: 'id', autoIncrement: true });
-        store.createIndex('by-date', 'date');
-      }
-      if (!db.objectStoreNames.contains('weight')) {
-        const store = db.createObjectStore('weight', { keyPath: 'id', autoIncrement: true });
-        store.createIndex('by-date', 'date');
-      }
-      if (!db.objectStoreNames.contains('settings')) {
+    upgrade(db, oldVersion) {
+      if (oldVersion < 1) {
+        // v1 stores
+        const mealsStore = db.createObjectStore('meals', { keyPath: 'id', autoIncrement: true });
+        mealsStore.createIndex('by-date', 'date');
+        
+        const waterStore = db.createObjectStore('water', { keyPath: 'id', autoIncrement: true });
+        waterStore.createIndex('by-date', 'date');
+        
+        const weightStore = db.createObjectStore('weight', { keyPath: 'id', autoIncrement: true });
+        weightStore.createIndex('by-date', 'date');
+        
         db.createObjectStore('settings', { keyPath: 'key' });
+      }
+
+      if (oldVersion < 2) {
+        // v2 stores
+        if (!db.objectStoreNames.contains('foods')) {
+          const foodStore = db.createObjectStore('foods', { keyPath: 'id', autoIncrement: true });
+          foodStore.createIndex('by-name', 'name');
+        }
+        
+        // You could migrate existing meals to have empty items array here if needed,
+        // but optional field 'items?' handles backward compatibility.
       }
     },
   });
@@ -82,6 +111,10 @@ export const dbActions = {
     const db = await initDB();
     return db.getAllFromIndex('meals', 'by-date', date);
   },
+  deleteMeal: async (id: number) => {
+    const db = await initDB();
+    return db.delete('meals', id);
+  },
   
   // Water
   addWater: async (water: Omit<Water, 'id'>) => {
@@ -92,6 +125,10 @@ export const dbActions = {
     const db = await initDB();
     return db.getAllFromIndex('water', 'by-date', date);
   },
+  deleteWater: async (id: number) => {
+    const db = await initDB();
+    return db.delete('water', id);
+  },
   
   // Weight
   addWeight: async (weight: Omit<Weight, 'id'>) => {
@@ -101,6 +138,10 @@ export const dbActions = {
   getAllWeights: async () => {
     const db = await initDB();
     return db.getAll('weight');
+  },
+  deleteWeight: async (id: number) => {
+    const db = await initDB();
+    return db.delete('weight', id);
   },
   
   // Settings
@@ -113,4 +154,18 @@ export const dbActions = {
     const result = await db.get('settings', key);
     return result?.value;
   },
+
+  // Foods (Recipes/Ingredients)
+  addFood: async (food: Omit<Food, 'id'>) => {
+    const db = await initDB();
+    return db.add('foods', food);
+  },
+  getAllFoods: async () => {
+    const db = await initDB();
+    return db.getAll('foods');
+  },
+  deleteFood: async (id: number) => {
+    const db = await initDB();
+    return db.delete('foods', id);
+  }
 };

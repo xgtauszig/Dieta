@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { dbActions } from '../db';
-import { Save } from 'lucide-react';
+import { Save, ChevronRight, UtensilsCrossed } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const SettingsPage: React.FC = () => {
   const [calorieGoal, setCalorieGoal] = useState<number>(2000);
@@ -26,6 +27,16 @@ const SettingsPage: React.FC = () => {
     <div className="p-4 space-y-6">
       <h1 className="text-2xl font-bold text-gray-800">Ajustes</h1>
       
+      <Link to="/foods" className="block bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between hover:bg-gray-50 transition-colors">
+        <div className="flex items-center space-x-3">
+          <div className="bg-orange-100 p-2 rounded-full text-orange-600">
+            <UtensilsCrossed size={20} />
+          </div>
+          <span className="font-medium text-gray-700">Gerenciar Meus Alimentos</span>
+        </div>
+        <ChevronRight size={20} className="text-gray-400" />
+      </Link>
+
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
         <label htmlFor="calorieGoal" className="block text-sm font-medium text-gray-700 mb-2">
           Meta Diária de Calorias

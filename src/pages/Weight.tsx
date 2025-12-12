@@ -3,7 +3,8 @@ import { dbActions } from '../db';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Plus, Scale } from 'lucide-react';
+import { Plus, Scale, Trash2 } from 'lucide-react';
+import { useDate } from '../contexts/DateContext';
 
 interface WeightEntry {
   id?: number;
@@ -12,11 +13,10 @@ interface WeightEntry {
 }
 
 const WeightPage: React.FC = () => {
+  const { selectedDate } = useDate();
   const [weights, setWeights] = useState<WeightEntry[]>([]);
   const [currentWeight, setCurrentWeight] = useState('');
   const [isAdding, setIsAdding] = useState(false);
-
-  const today = format(new Date(), 'yyyy-MM-dd');
 
   const loadWeights = React.useCallback(async () => {
     const allWeights = await dbActions.getAllWeights();
@@ -37,13 +37,20 @@ const WeightPage: React.FC = () => {
     if (!currentWeight) return;
 
     await dbActions.addWeight({
-      date: today,
+      date: selectedDate, // Use selected date
       kg: Number(currentWeight),
     });
 
     setCurrentWeight('');
     setIsAdding(false);
     loadWeights();
+  };
+
+  const handleDelete = async (id: number) => {
+    if (confirm('Apagar este registro de peso?')) {
+      await dbActions.deleteWeight(id);
+      loadWeights();
+    }
   };
 
   // Format data for chart
@@ -132,7 +139,15 @@ const WeightPage: React.FC = () => {
             <span className="text-gray-600">
               {format(parseISO(entry.date), "d 'de' MMMM", { locale: ptBR })}
             </span>
-            <span className="font-bold text-gray-900">{entry.kg} kg</span>
+            <div className="flex items-center space-x-3">
+              <span className="font-bold text-gray-900">{entry.kg} kg</span>
+              <button 
+                onClick={() => entry.id && handleDelete(entry.id)}
+                className="text-red-300 hover:text-red-500 p-1"
+              >
+                <Trash2 size={16} />
+              </button>
+            </div>
           </div>
         ))}
         {weights.length === 0 && (

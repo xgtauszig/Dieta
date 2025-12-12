@@ -1,17 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { dbActions } from '../db';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { Droplet, Plus, Flame } from 'lucide-react';
+import { Droplet, Plus, Flame, Minus } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useDate } from '../contexts/DateContext';
 
 const Dashboard: React.FC = () => {
+  const { selectedDate } = useDate();
   const [calorieGoal, setCalorieGoal] = useState(2000);
   const [consumedCalories, setConsumedCalories] = useState(0);
   const [waterIntake, setWaterIntake] = useState(0);
   const [todayWeight, setTodayWeight] = useState<number | null>(null);
-
-  const today = format(new Date(), 'yyyy-MM-dd');
+  const [waterLogs, setWaterLogs] = useState<{id?: number, amount: number}[]>([]);
 
   const loadData = React.useCallback(async () => {
     // Load Goal
@@ -19,22 +18,27 @@ const Dashboard: React.FC = () => {
     if (typeof goal === 'number') setCalorieGoal(goal);
 
     // Load Calories
-    const meals = await dbActions.getMealsByDate(today);
+    const meals = await dbActions.getMealsByDate(selectedDate);
     const totalCalories = meals.reduce((acc, meal) => acc + meal.calories, 0);
     setConsumedCalories(totalCalories);
 
     // Load Water
-    const waterLogs = await dbActions.getWaterByDate(today);
-    const totalWater = waterLogs.reduce((acc, log) => acc + log.amount, 0);
+    const logs = await dbActions.getWaterByDate(selectedDate);
+    setWaterLogs(logs);
+    const totalWater = logs.reduce((acc, log) => acc + log.amount, 0);
     setWaterIntake(totalWater);
 
     // Load Weight (Just check if logged today)
     const weights = await dbActions.getAllWeights();
     // In a real app we might query by index, but getting all is fine for small scale
     // Or add a getWeightByDate method. Let's filter here for now.
-    const todaysWeightEntry = weights.find(w => w.date === today);
-    if (todaysWeightEntry) setTodayWeight(todaysWeightEntry.kg);
-  }, [today]);
+    const todaysWeightEntry = weights.find(w => w.date === selectedDate);
+    if (todaysWeightEntry) {
+      setTodayWeight(todaysWeightEntry.kg);
+    } else {
+      setTodayWeight(null);
+    }
+  }, [selectedDate]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -47,23 +51,25 @@ const Dashboard: React.FC = () => {
   }, [loadData]);
 
   const addWater = async (amount: number) => {
-    await dbActions.addWater({ date: today, amount });
+    await dbActions.addWater({ date: selectedDate, amount });
     loadData();
+  };
+
+  const removeWater = async () => {
+    // Remove the last entry if exists
+    if (waterLogs.length > 0) {
+      const lastLog = waterLogs[waterLogs.length - 1];
+      if (lastLog.id) {
+        await dbActions.deleteWater(lastLog.id);
+        loadData();
+      }
+    }
   };
 
   const percentage = Math.min((consumedCalories / calorieGoal) * 100, 100);
 
   return (
     <div className="p-4 space-y-6 pb-24">
-      <header>
-        <h1 className="text-2xl font-bold text-gray-800">
-          Olá! <span className="text-2xl">👋</span>
-        </h1>
-        <p className="text-gray-500 text-sm">
-          {format(new Date(), "EEEE, d 'de' MMMM", { locale: ptBR })}
-        </p>
-      </header>
-
       {/* Calories Card */}
       <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 relative overflow-hidden">
         <div className="absolute top-0 right-0 p-4 opacity-10">
@@ -107,6 +113,13 @@ const Dashboard: React.FC = () => {
         </div>
 
         <div className="flex space-x-3">
+          <button 
+            onClick={removeWater}
+            disabled={waterIntake === 0}
+            className="w-12 bg-white hover:bg-red-50 text-red-500 py-3 rounded-xl font-semibold shadow-sm border border-blue-100 transition-colors flex items-center justify-center disabled:opacity-50"
+          >
+            <Minus size={20} />
+          </button>
           <button 
             onClick={() => addWater(250)}
             className="flex-1 bg-white hover:bg-blue-100 text-blue-600 py-3 rounded-xl font-semibold shadow-sm border border-blue-100 transition-colors flex items-center justify-center space-x-1"
