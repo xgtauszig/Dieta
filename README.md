@@ -1,2 +1,2 @@
-# Dieta
+# Dieta PWA
 App de dieta
