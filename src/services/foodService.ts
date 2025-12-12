@@ -12,15 +12,38 @@ const loadTacoData = async () => {
   if (tacoFoods) return;
 
   try {
-    const response = await fetch('/src/data/taco_food_db.json');
-    const data = await response.json();
-    tacoFoods = data;
+    console.log("Loading TACO data...");
+    // Dynamic import allows Vite/Rollup to chunk this large JSON file
+    // and load it only when needed.
+    const module = await import('../data/taco_food_db.json');
+    console.log("TACO data module loaded", module);
+    // The JSON module usually exports the content as default or directly if using certain configs.
+    // With standard JSON import, 'module.default' or 'module' holds the array.
+    tacoFoods = module.default || module;
 
-    fuseTaco = new Fuse(tacoFoods || [], {
+    // Ensure it's an array
+    if (!Array.isArray(tacoFoods)) {
+       // Sometimes it might be wrapped differently depending on tsconfig 'resolveJsonModule'
+       if (Array.isArray((tacoFoods as any).default)) {
+         tacoFoods = (tacoFoods as any).default;
+       } else {
+         // Fallback if structure is unexpected
+         tacoFoods = Object.values(tacoFoods);
+       }
+    }
+
+    if (!Array.isArray(tacoFoods)) {
+      console.error("TACO data is not an array", tacoFoods);
+      tacoFoods = [];
+      return;
+    }
+
+    fuseTaco = new Fuse(tacoFoods, {
       keys: ['description'],
       threshold: 0.4,
       ignoreLocation: true
     });
+    console.log("Fuse initialized with TACO data");
   } catch (error) {
     console.error("Failed to load TACO data", error);
   }
@@ -43,13 +66,8 @@ export const searchFoods = async (query: string): Promise<SearchResult[]> => {
 
   const tacoResults = fuseTaco?.search(query).map(result => {
     const item = result.item;
-    // Map TACO fields to Food interface
-    // TACO structure: description, energy_kcal, protein_g, carbohydrate_g, lipid_g, etc.
-    // Usually per 100g.
     return {
-      id: item.id, // TACO IDs might conflict with User IDs if we are not careful, but here we treat them as ephemeral search results mostly.
-                   // Actually, saving them to DB later might create new ID.
-                   // For now, let's keep original ID but handle it carefully.
+      id: item.id,
       name: item.description,
       unit: 'g',
       baseQuantity: 100,
@@ -61,6 +79,5 @@ export const searchFoods = async (query: string): Promise<SearchResult[]> => {
     };
   }) || [];
 
-  // Merge and return. Prioritize user foods?
   return [...userResults, ...tacoResults];
 };
