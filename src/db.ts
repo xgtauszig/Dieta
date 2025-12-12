@@ -1,44 +1,55 @@
 import { openDB, type DBSchema } from 'idb';
 
-interface MealItem {
+export interface MealItem {
   name: string;
   quantity: number;
   unit: string;
   calories: number;
+  protein?: number;
+  carbohydrate?: number;
+  lipid?: number;
 }
 
-interface Meals {
+export interface Meals {
   id?: number;
   date: string; // ISO string YYYY-MM-DD
   name: string;
   items?: MealItem[]; // New field for detailed items
   calories: number; // Total calories (sum of items or manual)
+  protein?: number;
+  carbohydrate?: number;
+  lipid?: number;
   image?: Blob; // Stored image
 }
 
-interface Water {
+export interface Water {
   id?: number;
   date: string; // ISO string YYYY-MM-DD
   amount: number; // in ml
 }
 
-interface Weight {
+export interface Weight {
   id?: number;
   date: string; // ISO string YYYY-MM-DD
   kg: number;
 }
 
-interface Settings {
+export interface Settings {
   key: string;
   value: unknown;
 }
 
-interface Food {
+export interface Food {
   id?: number;
   name: string;
   unit: string; // e.g., 'g', 'ml', 'unit', 'tbsp', 'tsp'
   baseQuantity?: number;
   caloriesPerUnit: number;
+  protein?: number;
+  carbohydrate?: number;
+  lipid?: number;
+  isRecipe?: boolean;
+  ingredients?: MealItem[];
 }
 
 interface DietaDB extends DBSchema {
@@ -69,7 +80,7 @@ interface DietaDB extends DBSchema {
 }
 
 const DB_NAME = 'dieta-pwa-db';
-const DB_VERSION = 2; // Incremented version
+const DB_VERSION = 3; // Incremented version for new fields
 
 export const initDB = async () => {
   return openDB<DietaDB>(DB_NAME, DB_VERSION, {
@@ -94,9 +105,11 @@ export const initDB = async () => {
           const foodStore = db.createObjectStore('foods', { keyPath: 'id', autoIncrement: true });
           foodStore.createIndex('by-name', 'name');
         }
-        
-        // You could migrate existing meals to have empty items array here if needed,
-        // but optional field 'items?' handles backward compatibility.
+      }
+
+      // v3 adds fields to interfaces, no schema change needed unless we want new indexes
+      if (oldVersion < 3) {
+         // Migration logic if needed, but fields are optional so existing data is valid
       }
     },
   });
