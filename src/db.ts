@@ -37,6 +37,7 @@ interface Food {
   id?: number;
   name: string;
   unit: string; // e.g., 'g', 'ml', 'unit', 'tbsp', 'tsp'
+  baseQuantity?: number;
   caloriesPerUnit: number;
 }
 

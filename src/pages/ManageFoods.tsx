@@ -6,6 +6,7 @@ interface Food {
   id?: number;
   name: string;
   unit: string;
+  baseQuantity?: number; // Optional because legacy items might not have it
   caloriesPerUnit: number;
 }
 
@@ -17,6 +18,7 @@ const ManageFoods: React.FC = () => {
   // Form State
   const [name, setName] = useState('');
   const [unit, setUnit] = useState('g');
+  const [baseQuantity, setBaseQuantity] = useState('1');
   const [calories, setCalories] = useState('');
 
   const loadFoods = async () => {
@@ -36,11 +38,13 @@ const ManageFoods: React.FC = () => {
       setEditingId(food.id || null);
       setName(food.name);
       setUnit(food.unit);
+      setBaseQuantity(String(food.baseQuantity || 1));
       setCalories(String(food.caloriesPerUnit));
     } else {
       setEditingId(null);
       setName('');
       setUnit('g');
+      setBaseQuantity('1');
       setCalories('');
     }
     setIsModalOpen(true);
@@ -50,19 +54,20 @@ const ManageFoods: React.FC = () => {
     e.preventDefault();
     if (!name || !calories) return;
 
+    const foodData = {
+      name,
+      unit,
+      baseQuantity: Number(baseQuantity) || 1,
+      caloriesPerUnit: Number(calories),
+    };
+
     if (editingId) {
       await dbActions.updateFood({
         id: editingId,
-        name,
-        unit,
-        caloriesPerUnit: Number(calories),
+        ...foodData
       });
     } else {
-      await dbActions.addFood({
-        name,
-        unit,
-        caloriesPerUnit: Number(calories),
-      });
+      await dbActions.addFood(foodData);
     }
 
     setIsModalOpen(false);
@@ -110,27 +115,37 @@ const ManageFoods: React.FC = () => {
                  />
                </div>
                
-               <div className="grid grid-cols-2 gap-4">
+               <div className="grid grid-cols-3 gap-3">
                  <div>
-                   <label className="block text-sm font-medium text-gray-700">Unidade</label>
+                   <label className="block text-sm font-medium text-gray-700 truncate">Qtd Base</label>
+                   <input 
+                     type="number" step="0.1"
+                     className="w-full p-3 bg-gray-50 rounded-xl border border-gray-200"
+                     value={baseQuantity} onChange={e => setBaseQuantity(e.target.value)}
+                     placeholder="1"
+                     required
+                   />
+                 </div>
+                 <div>
+                   <label className="block text-sm font-medium text-gray-700 truncate">Unidade</label>
                    <select 
                      className="w-full p-3 bg-gray-50 rounded-xl border border-gray-200"
                      value={unit} onChange={e => setUnit(e.target.value)}
                    >
-                     <option value="g">Gramas (g)</option>
-                     <option value="ml">Mililitros (ml)</option>
-                     <option value="colher_sopa">Colher de Sopa</option>
-                     <option value="colher_cha">Colher de Chá</option>
+                     <option value="g">g</option>
+                     <option value="ml">ml</option>
+                     <option value="colher_sopa">Colher Sopa</option>
+                     <option value="colher_cha">Colher Chá</option>
                      <option value="unidade">Unidade</option>
                    </select>
                  </div>
                  <div>
-                   <label className="block text-sm font-medium text-gray-700">Calorias (por 1 un)</label>
+                   <label className="block text-sm font-medium text-gray-700 truncate">Calorias</label>
                    <input 
                      type="number" step="0.1"
                      className="w-full p-3 bg-gray-50 rounded-xl border border-gray-200"
                      value={calories} onChange={e => setCalories(e.target.value)}
-                     placeholder="Ex: 1.2"
+                     placeholder="Kcal"
                      required
                    />
                  </div>
@@ -149,7 +164,11 @@ const ManageFoods: React.FC = () => {
           <div key={food.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center">
             <div>
               <h3 className="font-semibold text-gray-800">{food.name}</h3>
-              <p className="text-xs text-gray-500">{food.caloriesPerUnit} kcal / {food.unit}</p>
+              <p className="text-xs text-gray-500">
+                 {food.caloriesPerUnit} kcal 
+                 <span className="text-gray-400 mx-1">/</span> 
+                 {food.baseQuantity || 1} {food.unit}
+              </p>
             </div>
             <div className="flex space-x-2">
               <button onClick={() => openModal(food)} className="text-blue-400 p-2 hover:bg-blue-50 rounded-full">

@@ -23,6 +23,7 @@ interface Food {
   id?: number;
   name: string;
   unit: string;
+  baseQuantity?: number;
   caloriesPerUnit: number;
 }
 
@@ -101,11 +102,15 @@ const MealsPage: React.FC = () => {
 
     if (selectedFood) {
       const qty = Number(itemQuantity) || 1;
+      const base = selectedFood.baseQuantity || 1;
+      // Formula: (Consumed / Base) * CaloriesPerBase
+      const totalCals = (qty / base) * selectedFood.caloriesPerUnit;
+      
       newItem = {
         name: selectedFood.name,
         quantity: qty,
         unit: selectedFood.unit,
-        calories: Number((selectedFood.caloriesPerUnit * qty).toFixed(1))
+        calories: Number(totalCals.toFixed(1))
       };
     } else {
       // Manual entry
@@ -402,7 +407,7 @@ const MealsPage: React.FC = () => {
                       />
                       {/* Search Results Dropdown */}
                       {searchQuery && !selectedFood && (
-                        <div className="absolute top-full left-0 right-0 bg-white border border-gray-100 rounded-lg shadow-lg max-h-40 overflow-y-auto z-10 mt-1">
+                        <div className="absolute top-full left-0 right-0 bg-white border border-gray-100 rounded-lg shadow-lg max-h-40 overflow-y-auto z-20 mt-1">
                           {filteredFoods.map(food => (
                             <div 
                               key={food.id}
@@ -425,7 +430,7 @@ const MealsPage: React.FC = () => {
                     
                     {/* Manual Entry Fields (Show explicitly if manual or no food selected) */}
                     {!selectedFood && (
-                       <div className="grid grid-cols-2 gap-2 animate-in fade-in slide-in-from-top-2">
+                       <div className="grid grid-cols-2 gap-2 animate-in fade-in slide-in-from-top-2 mt-4 pt-2">
                           <div>
                             <label className="text-[10px] text-gray-500 uppercase font-bold">Unidade</label>
                             <select 
