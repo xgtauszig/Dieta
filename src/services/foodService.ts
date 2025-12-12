@@ -2,34 +2,39 @@ import Fuse from 'fuse.js';
 import { dbActions, type Food } from '../db';
 
 export interface SearchResult extends Food {
-  origin: 'taco' | 'user';
+  origin: 'taco' | 'user'; // We keep 'taco' as the literal type for system foods to minimize refactoring, but conceptually it's now TBCA
 }
 
-let tacoFoods: any[] | null = null;
-let fuseTaco: Fuse<any> | null = null;
+// Rename internal variable for clarity, though external interface remains compatible
+let systemFoods: any[] | null = null;
+let fuseSystem: Fuse<any> | null = null;
 
-const loadTacoData = async () => {
-  if (tacoFoods) return;
+const loadSystemData = async () => {
+  if (systemFoods) return;
 
   try {
-    // Dynamic import allows Vite to bundle this JSON file into a chunk
-    const module = await import('../data/taco_food_db.json');
-    // Handle both default export (if JSON treated as module) and direct import
+    // Dynamic import of the new TBCA database
+    const module = await import('../data/tbca_database.json');
     const data = module.default || module;
-    tacoFoods = data;
+    systemFoods = data;
 
-    fuseTaco = new Fuse(tacoFoods || [], {
-      keys: ['description'],
-      threshold: 0.4,
-      ignoreLocation: true
+    // Configure Fuse for the larger dataset
+    fuseSystem = new Fuse(systemFoods || [], {
+      keys: [
+        { name: 'nome', weight: 0.7 },
+        { name: 'grupo', weight: 0.3 }
+      ],
+      threshold: 0.3, // Lower threshold for stricter/better matching on large dataset
+      ignoreLocation: true,
+      minMatchCharLength: 2
     });
   } catch (error) {
-    console.error("Failed to load TACO data", error);
+    console.error("Failed to load TBCA data", error);
   }
 };
 
 export const searchFoods = async (query: string): Promise<SearchResult[]> => {
-  await loadTacoData();
+  await loadSystemData();
 
   const userFoods = await dbActions.getAllFoods();
   const fuseUser = new Fuse(userFoods, {
@@ -43,26 +48,21 @@ export const searchFoods = async (query: string): Promise<SearchResult[]> => {
     origin: 'user' as const
   }));
 
-  const tacoResults = fuseTaco?.search(query).map(result => {
+  const systemResults = fuseSystem?.search(query, { limit: 50 }).map(result => {
     const item = result.item;
-    // Map TACO fields to Food interface
-    // TACO structure: description, energy_kcal, protein_g, carbohydrate_g, lipid_g, etc.
-    // Usually per 100g.
+    // Map TBCA fields to Food interface
     return {
-      id: item.id, // TACO IDs might conflict with User IDs if we are not careful, but here we treat them as ephemeral search results mostly.
-                   // Actually, saving them to DB later might create new ID.
-                   // For now, let's keep original ID but handle it carefully.
-      name: item.description,
+      id: item.id,
+      name: item.nome,
       unit: 'g',
       baseQuantity: 100,
-      caloriesPerUnit: typeof item.energy_kcal === 'number' ? item.energy_kcal : 0,
-      protein: typeof item.protein_g === 'number' ? item.protein_g : 0,
-      carbohydrate: typeof item.carbohydrate_g === 'number' ? item.carbohydrate_g : 0,
-      lipid: typeof item.lipid_g === 'number' ? item.lipid_g : 0,
-      origin: 'taco' as const
+      caloriesPerUnit: typeof item.calorias === 'number' ? item.calorias : 0,
+      protein: typeof item.proteinas === 'number' ? item.proteinas : 0,
+      carbohydrate: typeof item.carboidratos === 'number' ? item.carboidratos : 0,
+      lipid: typeof item.gorduras === 'number' ? item.gorduras : 0,
+      origin: 'taco' as const // Label as 'taco' (System) for UI consistency
     };
   }) || [];
 
-  // Merge and return. Prioritize user foods?
-  return [...userResults, ...tacoResults];
+  return [...userResults, ...systemResults];
 };
