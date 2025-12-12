@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { dbActions } from '../db';
 import { Plus, Trash2, X, Pencil, Search, ChefHat } from 'lucide-react';
 import { searchFoods, type SearchResult } from '../services/foodService';
+import { calculateRecipeTotals, normalizeRecipe, type CalculationMode } from '../utils/recipeUtils';
 
 interface Food {
   id?: number;
@@ -14,6 +15,9 @@ interface Food {
   lipid?: number;
   isRecipe?: boolean;
   ingredients?: any[]; // Simplified for local UI usage
+  // Extra fields for recipe logic retention (optional, but good for editing)
+  recipeMode?: CalculationMode;
+  recipeFinalValue?: number;
 }
 
 const ManageFoods: React.FC = () => {
@@ -36,6 +40,10 @@ const ManageFoods: React.FC = () => {
   const [recipeSearchResults, setRecipeSearchResults] = useState<SearchResult[]>([]);
   const [recipeIngredients, setRecipeIngredients] = useState<any[]>([]);
   const [recipeFinalWeight, setRecipeFinalWeight] = useState('');
+
+  // New Recipe State
+  const [recipeCalculationMode, setRecipeCalculationMode] = useState<CalculationMode>('weight');
+  const [recipePortions, setRecipePortions] = useState('');
 
   const loadFoods = async () => {
     const allFoods = await dbActions.getAllFoods();
@@ -76,23 +84,42 @@ const ManageFoods: React.FC = () => {
       setIsRecipeMode(!!food.isRecipe);
       if (food.ingredients) {
         setRecipeIngredients(food.ingredients);
-        // Approximate final weight? If not stored, we assume sum of parts or just 100g base.
-        // For editing recipes, we might need more complex logic.
-        // For simplicity, let's treat editing existing recipe as just editing the final nutrition values for now,
-        // or fully re-creating.
-        // TODO: Better recipe editing.
+
+        // Infer mode if not explicitly saved (backward compatibility)
+        // If unit is 'unid' or 'portion', likely portions mode.
+        // But previously we always forced 'g' and 100.
+        // We can check if 'recipeMode' exists in future.
+        if (food.recipeMode) {
+          setRecipeCalculationMode(food.recipeMode);
+          if (food.recipeMode === 'weight') {
+             setRecipeFinalWeight(String(food.recipeFinalValue || ''));
+             setRecipePortions('');
+          } else {
+             setRecipePortions(String(food.recipeFinalValue || ''));
+             setRecipeFinalWeight('');
+          }
+        } else {
+          // Default to weight mode if unknown
+          setRecipeCalculationMode('weight');
+          // Try to guess final weight from nutrition density? Hard.
+          // Just leave blank to re-calculate from sum
+          setRecipeFinalWeight('');
+          setRecipePortions('');
+        }
       }
     } else {
       setEditingId(null);
       setName('');
       setUnit('g');
-      setBaseQuantity(mode === 'recipe' ? '100' : '1'); // Recipes usually normalized to 100g
+      setBaseQuantity(mode === 'recipe' ? '100' : '1');
       setCalories('');
       setProtein('');
       setCarbs('');
       setFat('');
       setRecipeIngredients([]);
       setRecipeFinalWeight('');
+      setRecipeCalculationMode('weight');
+      setRecipePortions('');
     }
     setIsModalOpen(true);
   };
@@ -118,21 +145,6 @@ const ManageFoods: React.FC = () => {
     setRecipeIngredients(newIngredients);
   };
 
-  const calculateRecipeTotals = () => {
-    let totalCals = 0, totalProt = 0, totalCarb = 0, totalFat = 0, totalWeight = 0;
-
-    recipeIngredients.forEach(ing => {
-      const ratio = ing.quantity / (ing.baseQuantity || 100);
-      totalCals += (ing.caloriesPerUnit || 0) * ratio;
-      totalProt += (ing.protein || 0) * ratio;
-      totalCarb += (ing.carbohydrate || 0) * ratio;
-      totalFat += (ing.lipid || 0) * ratio;
-      totalWeight += Number(ing.quantity);
-    });
-
-    return { totalCals, totalProt, totalCarb, totalFat, totalWeight };
-  };
-
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name) return;
@@ -149,21 +161,28 @@ const ManageFoods: React.FC = () => {
     };
 
     if (isRecipeMode) {
-      const totals = calculateRecipeTotals();
-      const finalWeight = Number(recipeFinalWeight) || totals.totalWeight;
+      const totals = calculateRecipeTotals(recipeIngredients);
 
-      // Normalize to 100g
-      const ratio = 100 / finalWeight;
+      let finalValue = 0;
+      if (recipeCalculationMode === 'weight') {
+        finalValue = Number(recipeFinalWeight) || totals.totalWeight;
+      } else {
+        finalValue = Number(recipePortions) || 1;
+      }
+
+      const normalized = normalizeRecipe(totals, recipeCalculationMode, finalValue);
 
       foodData = {
         ...foodData,
-        unit: 'g',
-        baseQuantity: 100,
-        caloriesPerUnit: Number((totals.totalCals * ratio).toFixed(1)),
-        protein: Number((totals.totalProt * ratio).toFixed(1)),
-        carbohydrate: Number((totals.totalCarb * ratio).toFixed(1)),
-        lipid: Number((totals.totalFat * ratio).toFixed(1)),
-        ingredients: recipeIngredients
+        unit: normalized.unit,
+        baseQuantity: normalized.baseQuantity,
+        caloriesPerUnit: normalized.caloriesPerUnit,
+        protein: normalized.protein,
+        carbohydrate: normalized.carbohydrate,
+        lipid: normalized.lipid,
+        ingredients: recipeIngredients,
+        recipeMode: recipeCalculationMode,
+        recipeFinalValue: finalValue
       };
     }
 
@@ -187,7 +206,7 @@ const ManageFoods: React.FC = () => {
     }
   };
 
-  const { totalCals, totalProt, totalCarb, totalFat, totalWeight } = calculateRecipeTotals();
+  const { totalCals, totalProt, totalCarb, totalFat, totalWeight } = calculateRecipeTotals(recipeIngredients);
 
   return (
     <div className="p-4 space-y-6 pb-24">
@@ -303,16 +322,54 @@ const ManageFoods: React.FC = () => {
                        </div>
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Peso Final da Receita (g)</label>
-                      <p className="text-xs text-gray-400 mb-1">Informe o peso depois de pronto (cozido). Se deixar vazio, usará a soma dos ingredientes.</p>
-                      <input
-                        type="number"
-                        className="w-full p-2 bg-gray-50 rounded-lg border border-gray-200"
-                        placeholder={String(totalWeight)}
-                        value={recipeFinalWeight}
-                        onChange={e => setRecipeFinalWeight(e.target.value)}
-                      />
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium text-gray-700">Calcular por:</label>
+                      <div className="flex space-x-4 mb-2">
+                        <label className="flex items-center space-x-2 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="recipeMode"
+                            checked={recipeCalculationMode === 'weight'}
+                            onChange={() => setRecipeCalculationMode('weight')}
+                          />
+                          <span>Peso Final (g)</span>
+                        </label>
+                        <label className="flex items-center space-x-2 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="recipeMode"
+                            checked={recipeCalculationMode === 'portions'}
+                            onChange={() => setRecipeCalculationMode('portions')}
+                          />
+                          <span>Porções / Unidades</span>
+                        </label>
+                      </div>
+
+                      {recipeCalculationMode === 'weight' ? (
+                        <div>
+                           <label className="block text-xs text-gray-500">Peso pronto (cozido)</label>
+                           <input
+                             type="number"
+                             className="w-full p-2 bg-gray-50 rounded-lg border border-gray-200"
+                             placeholder={`Soma: ${totalWeight}`}
+                             value={recipeFinalWeight}
+                             onChange={e => setRecipeFinalWeight(e.target.value)}
+                           />
+                           <p className="text-xs text-gray-400 mt-1">Se vazio, usará a soma dos ingredientes. Nutrição será baseada em 100g.</p>
+                        </div>
+                      ) : (
+                        <div>
+                           <label className="block text-xs text-gray-500">Número de Porções</label>
+                           <input
+                             type="number"
+                             className="w-full p-2 bg-gray-50 rounded-lg border border-gray-200"
+                             placeholder="Ex: 8"
+                             value={recipePortions}
+                             onChange={e => setRecipePortions(e.target.value)}
+                           />
+                           <p className="text-xs text-gray-400 mt-1">Nutrição será calculada por 1 porção/unidade.</p>
+                        </div>
+                      )}
                     </div>
                  </div>
                ) : (
