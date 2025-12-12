@@ -6,6 +6,7 @@ import Meals from './pages/Meals';
 import WeightPage from './pages/Weight';
 import SettingsPage from './pages/Settings';
 import ManageFoods from './pages/ManageFoods';
+import ReportsPage from './pages/Reports';
 import { DateProvider } from './contexts/DateContext';
 
 const App: React.FC = () => {
@@ -18,6 +19,7 @@ const App: React.FC = () => {
             <Route path="meals" element={<Meals />} />
             <Route path="foods" element={<ManageFoods />} />
             <Route path="weight" element={<WeightPage />} />
+            <Route path="reports" element={<ReportsPage />} />
             <Route path="settings" element={<SettingsPage />} />
           </Route>
         </Routes>

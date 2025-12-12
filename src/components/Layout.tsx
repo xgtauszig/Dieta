@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
-import { LayoutDashboard, Utensils, Weight, Settings, ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
+import { LayoutDashboard, Utensils, Weight, Settings, ChevronLeft, ChevronRight, Calendar, BarChart2 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useDate } from '../contexts/DateContext';
 import { format, addDays, subDays, parseISO } from 'date-fns';
@@ -83,6 +83,19 @@ const Layout: React.FC = () => {
           >
             <Weight size={24} />
             <span className="text-xs font-medium">Peso</span>
+          </NavLink>
+
+          <NavLink
+            to="/reports"
+            className={({ isActive }) =>
+              clsx(
+                "flex flex-col items-center justify-center w-full h-full space-y-1",
+                isActive ? "text-green-600" : "text-gray-500 hover:text-green-500"
+              )
+            }
+          >
+            <BarChart2 size={24} />
+            <span className="text-xs font-medium">Relatórios</span>
           </NavLink>
           
           <NavLink

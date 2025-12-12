@@ -116,6 +116,10 @@ export const dbActions = {
     const db = await initDB();
     return db.delete('meals', id);
   },
+  getAllMeals: async () => {
+    const db = await initDB();
+    return db.getAll('meals');
+  },
   updateMeal: async (meal: Meals) => {
     const db = await initDB();
     return db.put('meals', meal);
