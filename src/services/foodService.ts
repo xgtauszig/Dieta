@@ -12,8 +12,10 @@ const loadTacoData = async () => {
   if (tacoFoods) return;
 
   try {
-    const response = await fetch('/src/data/taco_food_db.json');
-    const data = await response.json();
+    // Dynamic import allows Vite to bundle this JSON file into a chunk
+    const module = await import('../data/taco_food_db.json');
+    // Handle both default export (if JSON treated as module) and direct import
+    const data = module.default || module;
     tacoFoods = data;
 
     fuseTaco = new Fuse(tacoFoods || [], {
