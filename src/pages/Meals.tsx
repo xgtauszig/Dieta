@@ -33,6 +33,7 @@ const MealsPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   
   // Meal Form State
+  const [editingMealId, setEditingMealId] = useState<number | null>(null);
   const [mealName, setMealName] = useState('');
   const [items, setItems] = useState<MealItem[]>([]);
   const [totalCalories, setTotalCalories] = useState(0);
@@ -43,6 +44,9 @@ const MealsPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFood, setSelectedFood] = useState<Food | null>(null);
   const [itemQuantity, setItemQuantity] = useState('');
+  const [manualUnit, setManualUnit] = useState('g');
+  const [manualCalories, setManualCalories] = useState('');
+  const [saveToLibrary, setSaveToLibrary] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -90,8 +94,8 @@ const MealsPage: React.FC = () => {
     }
   };
 
-  const handleAddItem = () => {
-    if (!selectedFood && !searchQuery) return;
+  const handleAddItem = async () => {
+    if (!searchQuery) return;
 
     let newItem: MealItem;
 
@@ -104,13 +108,33 @@ const MealsPage: React.FC = () => {
         calories: Number((selectedFood.caloriesPerUnit * qty).toFixed(1))
       };
     } else {
-      // Manual entry fallback (if they typed a name that doesn't exist)
+      // Manual entry
+      const qty = Number(itemQuantity) || 1;
+      const cals = Number(manualCalories) || 0;
+      
+      // Calculate total calories for the item line
+      // If user entered total calories, use it. If user entered calories per unit logic, we might need a different UI.
+      // For simplicity here: manualCalories is TOTAL for this amount.
+      // OR: manualCalories is PER UNIT if we want to be consistent with library.
+      // Let's assume manualCalories is TOTAL for the added amount to avoid math confusion for the user in this quick mode.
+      
       newItem = {
         name: searchQuery,
-        quantity: 1,
-        unit: 'un',
-        calories: 0 // User would have to edit this or we assume 0 for unknown
+        quantity: qty,
+        unit: manualUnit,
+        calories: cals
       };
+
+      if (saveToLibrary) {
+        // Calculate calories per unit to save to library
+        const calsPerUnit = cals / qty;
+        await dbActions.addFood({
+          name: searchQuery,
+          unit: manualUnit,
+          caloriesPerUnit: Number(calsPerUnit.toFixed(2))
+        });
+        loadFoods(); // Refresh library
+      }
     }
 
     setItems([...items, newItem]);
@@ -120,6 +144,9 @@ const MealsPage: React.FC = () => {
     setSearchQuery('');
     setSelectedFood(null);
     setItemQuantity('');
+    setManualCalories('');
+    setManualUnit('g');
+    setSaveToLibrary(false);
   };
 
   const handleRemoveItem = (index: number) => {
@@ -135,21 +162,70 @@ const MealsPage: React.FC = () => {
     // If manual total is entered (override) or calculated from items
     const finalCalories = totalCalories > 0 ? totalCalories : Number(prompt("Quantas calorias no total?", "0"));
 
-    await dbActions.addMeal({
+    const mealData = {
       date: selectedDate,
       name: mealName,
       items: items,
       calories: finalCalories,
       image: mealImage || undefined,
-    });
+    };
+
+    if (editingMealId) {
+       // We need to keep the existing image if no new one is provided
+       // But idb.put replaces everything. 
+       // So if mealImage is null, we should check if we already had one in the DB (edit flow).
+       // However, we didn't store the old blob in state to restore it easily without reading DB again.
+       // A quick fix is to not include image field in update if it's undefined, but PUT replaces.
+       // We should have loaded the image into state or kept the old object.
+       
+       // Better approach: merge with existing meal logic handled outside or just overwrite.
+       // Since we didn't implement image preview from existing Blob in edit mode fully (just URL),
+       // let's assume if user doesn't change photo, we keep old. 
+       // We can do this by fetching the old meal again or storing it.
+       // For now, let's just save. Note: editing might lose photo if we don't handle this.
+       
+       // Let's fetch the original meal to preserve image if not changed
+       const oldMeals = await dbActions.getMealsByDate(selectedDate);
+       const oldMeal = oldMeals.find(m => m.id === editingMealId);
+       
+       await dbActions.updateMeal({
+         ...mealData,
+         id: editingMealId,
+         image: mealImage || oldMeal?.image // Keep old image if new one is null
+       });
+    } else {
+      await dbActions.addMeal(mealData);
+    }
 
     // Reset Form
+    closeModal();
+    loadMeals();
+  };
+
+  const openModal = (meal?: Meal) => {
+    if (meal) {
+      setEditingMealId(meal.id || null);
+      setMealName(meal.name);
+      setItems(meal.items || []);
+      setTotalCalories(meal.calories);
+      setMealImage(null); // Reset file input. We could show preview of existing.
+    } else {
+      setEditingMealId(null);
+      setMealName('');
+      setItems([]);
+      setTotalCalories(0);
+      setMealImage(null);
+    }
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setEditingMealId(null);
     setMealName('');
     setItems([]);
     setTotalCalories(0);
     setMealImage(null);
     setIsModalOpen(false);
-    loadMeals();
   };
 
   const handleDeleteMeal = async (id: number) => {
@@ -185,7 +261,7 @@ const MealsPage: React.FC = () => {
           <p className="text-gray-500 text-sm">Registro diário</p>
         </div>
         <button
-          onClick={() => setIsModalOpen(true)}
+          onClick={() => openModal()}
           className="bg-green-600 text-white p-3 rounded-full shadow-lg hover:bg-green-700 transition-colors"
         >
           <Plus size={24} />
@@ -202,7 +278,8 @@ const MealsPage: React.FC = () => {
           {meals.map((meal) => (
             <div
               key={meal.id}
-              className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4"
+              className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 cursor-pointer hover:border-green-300 transition-colors"
+              onClick={() => openModal(meal)}
             >
               <div className="flex items-start space-x-4 mb-3">
                 <div className="w-16 h-16 rounded-xl bg-gray-100 flex-shrink-0 overflow-hidden">
@@ -222,10 +299,10 @@ const MealsPage: React.FC = () => {
                   <div className="flex justify-between items-start">
                     <h3 className="font-semibold text-gray-800">{meal.name}</h3>
                     <div className="flex space-x-1">
-                         <button onClick={() => handleRepeatMeal(meal)} className="text-blue-400 p-1 hover:bg-blue-50 rounded">
+                         <button onClick={(e) => { e.stopPropagation(); handleRepeatMeal(meal); }} className="text-blue-400 p-1 hover:bg-blue-50 rounded">
                            <Copy size={16} />
                          </button>
-                         <button onClick={() => meal.id && handleDeleteMeal(meal.id)} className="text-red-400 p-1 hover:bg-red-50 rounded">
+                         <button onClick={(e) => { e.stopPropagation(); if(meal.id) handleDeleteMeal(meal.id); }} className="text-red-400 p-1 hover:bg-red-50 rounded">
                            <Trash2 size={16} />
                          </button>
                     </div>
@@ -317,7 +394,7 @@ const MealsPage: React.FC = () => {
                       <Search size={16} className="absolute left-3 top-3 text-gray-400" />
                       <input 
                         type="text" 
-                        placeholder="Buscar alimento..." 
+                        placeholder="Buscar ou criar manual..." 
                         value={searchQuery}
                         onChange={e => { setSearchQuery(e.target.value); setSelectedFood(null); }}
                         className="w-full pl-9 p-2 rounded-lg border border-gray-200 text-sm"
@@ -340,39 +417,83 @@ const MealsPage: React.FC = () => {
                             </div>
                           ))}
                           {filteredFoods.length === 0 && (
-                            <div className="p-2 text-gray-400 text-xs">Nenhum alimento encontrado. Digite para adicionar manual.</div>
+                            <div className="p-2 text-gray-400 text-xs italic">Nenhum resultado. Preencha abaixo para adicionar manual.</div>
                           )}
                         </div>
                       )}
                     </div>
                     
+                    {/* Manual Entry Fields (Show explicitly if manual or no food selected) */}
+                    {!selectedFood && (
+                       <div className="grid grid-cols-2 gap-2 animate-in fade-in slide-in-from-top-2">
+                          <div>
+                            <label className="text-[10px] text-gray-500 uppercase font-bold">Unidade</label>
+                            <select 
+                               className="w-full p-2 rounded-lg border border-gray-200 text-sm bg-white"
+                               value={manualUnit} onChange={e => setManualUnit(e.target.value)}
+                            >
+                               <option value="g">Gramas (g)</option>
+                               <option value="ml">Mililitros (ml)</option>
+                               <option value="colher_sopa">Colher Sopa</option>
+                               <option value="colher_cha">Colher Chá</option>
+                               <option value="un">Unidade</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="text-[10px] text-gray-500 uppercase font-bold">Calorias (Total)</label>
+                            <input 
+                              type="number"
+                              placeholder="Kcal"
+                              className="w-full p-2 rounded-lg border border-gray-200 text-sm"
+                              value={manualCalories} onChange={e => setManualCalories(e.target.value)}
+                            />
+                          </div>
+                       </div>
+                    )}
+
                     <div className="flex space-x-2">
                       <div className="flex-1">
-                         <input 
-                           type="number" 
-                           placeholder={selectedFood ? "Qtd" : "Qtd (manual)"}
-                           value={itemQuantity}
-                           onChange={e => setItemQuantity(e.target.value)}
-                           className="w-full p-2 rounded-lg border border-gray-200 text-sm"
-                         />
-                      </div>
-                      <div className="flex items-center text-sm text-gray-600 bg-white px-3 rounded-lg border border-gray-200 min-w-[60px] justify-center">
-                        {selectedFood ? selectedFood.unit : 'un'}
+                         <label className="text-[10px] text-gray-500 uppercase font-bold pl-1">Quantidade</label>
+                         <div className="flex items-center">
+                           <input 
+                             type="number" 
+                             placeholder="Qtd"
+                             value={itemQuantity}
+                             onChange={e => setItemQuantity(e.target.value)}
+                             className="w-full p-2 rounded-lg border border-gray-200 text-sm"
+                           />
+                           {selectedFood && (
+                             <span className="ml-2 text-sm text-gray-500">{selectedFood.unit}</span>
+                           )}
+                         </div>
                       </div>
                     </div>
 
-                    <div className="flex justify-end space-x-2">
+                    {!selectedFood && searchQuery && manualCalories && (
+                      <div className="flex items-center space-x-2">
+                        <input 
+                          type="checkbox" 
+                          id="saveToLib" 
+                          checked={saveToLibrary} 
+                          onChange={e => setSaveToLibrary(e.target.checked)}
+                          className="rounded text-green-600 focus:ring-green-500"
+                        />
+                        <label htmlFor="saveToLib" className="text-sm text-gray-600">Salvar em "Meus Alimentos"</label>
+                      </div>
+                    )}
+
+                    <div className="flex justify-end space-x-2 pt-2">
                       <button 
                         type="button" 
-                        onClick={() => { setIsAddingItem(false); setSearchQuery(''); setSelectedFood(null); }}
-                        className="px-3 py-1 text-sm text-gray-500"
+                        onClick={() => { setIsAddingItem(false); setSearchQuery(''); setSelectedFood(null); setManualCalories(''); }}
+                        className="px-3 py-2 text-sm text-gray-500 hover:bg-gray-100 rounded-lg"
                       >
                         Cancelar
                       </button>
                       <button 
                         type="button" 
                         onClick={handleAddItem}
-                        className="px-3 py-1 bg-green-600 text-white text-sm rounded-lg font-medium"
+                        className="px-4 py-2 bg-green-600 text-white text-sm rounded-lg font-bold shadow-md hover:bg-green-700"
                       >
                         Confirmar
                       </button>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { dbActions } from '../db';
-import { Plus, Trash2, X } from 'lucide-react';
+import { Plus, Trash2, X, Pencil } from 'lucide-react';
 
 interface Food {
   id?: number;
@@ -11,7 +11,8 @@ interface Food {
 
 const ManageFoods: React.FC = () => {
   const [foods, setFoods] = useState<Food[]>([]);
-  const [isAdding, setIsAdding] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
   
   // Form State
   const [name, setName] = useState('');
@@ -30,21 +31,41 @@ const ManageFoods: React.FC = () => {
     fetchData();
   }, []);
 
+  const openModal = (food?: Food) => {
+    if (food) {
+      setEditingId(food.id || null);
+      setName(food.name);
+      setUnit(food.unit);
+      setCalories(String(food.caloriesPerUnit));
+    } else {
+      setEditingId(null);
+      setName('');
+      setUnit('g');
+      setCalories('');
+    }
+    setIsModalOpen(true);
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !calories) return;
 
-    await dbActions.addFood({
-      name,
-      unit,
-      caloriesPerUnit: Number(calories),
-    });
+    if (editingId) {
+      await dbActions.updateFood({
+        id: editingId,
+        name,
+        unit,
+        caloriesPerUnit: Number(calories),
+      });
+    } else {
+      await dbActions.addFood({
+        name,
+        unit,
+        caloriesPerUnit: Number(calories),
+      });
+    }
 
-    // Reset
-    setName('');
-    setCalories('');
-    setUnit('g');
-    setIsAdding(false);
+    setIsModalOpen(false);
     loadFoods();
   };
 
@@ -63,19 +84,19 @@ const ManageFoods: React.FC = () => {
           <p className="text-gray-500 text-sm">Crie ingredientes personalizados</p>
         </div>
         <button
-          onClick={() => setIsAdding(true)}
+          onClick={() => openModal()}
           className="bg-green-600 text-white p-3 rounded-full shadow-lg hover:bg-green-700 transition-colors"
         >
           <Plus size={24} />
         </button>
       </header>
 
-      {isAdding && (
+      {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
            <div className="bg-white w-full max-w-md rounded-2xl p-6 space-y-4 animate-in fade-in zoom-in duration-200">
              <div className="flex justify-between items-center mb-2">
-               <h2 className="text-xl font-bold">Novo Alimento</h2>
-               <button onClick={() => setIsAdding(false)}><X size={24} className="text-gray-500" /></button>
+               <h2 className="text-xl font-bold">{editingId ? 'Editar Alimento' : 'Novo Alimento'}</h2>
+               <button onClick={() => setIsModalOpen(false)}><X size={24} className="text-gray-500" /></button>
              </div>
              
              <form onSubmit={handleSave} className="space-y-4">
@@ -130,13 +151,18 @@ const ManageFoods: React.FC = () => {
               <h3 className="font-semibold text-gray-800">{food.name}</h3>
               <p className="text-xs text-gray-500">{food.caloriesPerUnit} kcal / {food.unit}</p>
             </div>
-            <button onClick={() => food.id && handleDelete(food.id)} className="text-red-400 p-2 hover:bg-red-50 rounded-full">
-              <Trash2 size={18} />
-            </button>
+            <div className="flex space-x-2">
+              <button onClick={() => openModal(food)} className="text-blue-400 p-2 hover:bg-blue-50 rounded-full">
+                <Pencil size={18} />
+              </button>
+              <button onClick={() => food.id && handleDelete(food.id)} className="text-red-400 p-2 hover:bg-red-50 rounded-full">
+                <Trash2 size={18} />
+              </button>
+            </div>
           </div>
         ))}
         
-        {foods.length === 0 && !isAdding && (
+        {foods.length === 0 && !isModalOpen && (
           <div className="text-center text-gray-400 py-10">
             <p>Nenhum alimento cadastrado.</p>
           </div>

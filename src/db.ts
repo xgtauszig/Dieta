@@ -115,6 +115,10 @@ export const dbActions = {
     const db = await initDB();
     return db.delete('meals', id);
   },
+  updateMeal: async (meal: Meals) => {
+    const db = await initDB();
+    return db.put('meals', meal);
+  },
   
   // Water
   addWater: async (water: Omit<Water, 'id'>) => {
@@ -167,5 +171,9 @@ export const dbActions = {
   deleteFood: async (id: number) => {
     const db = await initDB();
     return db.delete('foods', id);
+  },
+  updateFood: async (food: Food) => {
+    const db = await initDB();
+    return db.put('foods', food);
   }
 };
