@@ -1,0 +1,145 @@
+import React, { useEffect, useState } from 'react';
+import { dbActions } from '../db';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { Droplet, Plus, Flame } from 'lucide-react';
+import { Link } from 'react-router-dom';
+
+const Dashboard: React.FC = () => {
+  const [calorieGoal, setCalorieGoal] = useState(2000);
+  const [consumedCalories, setConsumedCalories] = useState(0);
+  const [waterIntake, setWaterIntake] = useState(0);
+  const [todayWeight, setTodayWeight] = useState<number | null>(null);
+
+  const today = format(new Date(), 'yyyy-MM-dd');
+
+  const loadData = React.useCallback(async () => {
+    // Load Goal
+    const goal = await dbActions.getSetting('calorieGoal');
+    if (typeof goal === 'number') setCalorieGoal(goal);
+
+    // Load Calories
+    const meals = await dbActions.getMealsByDate(today);
+    const totalCalories = meals.reduce((acc, meal) => acc + meal.calories, 0);
+    setConsumedCalories(totalCalories);
+
+    // Load Water
+    const waterLogs = await dbActions.getWaterByDate(today);
+    const totalWater = waterLogs.reduce((acc, log) => acc + log.amount, 0);
+    setWaterIntake(totalWater);
+
+    // Load Weight (Just check if logged today)
+    const weights = await dbActions.getAllWeights();
+    // In a real app we might query by index, but getting all is fine for small scale
+    // Or add a getWeightByDate method. Let's filter here for now.
+    const todaysWeightEntry = weights.find(w => w.date === today);
+    if (todaysWeightEntry) setTodayWeight(todaysWeightEntry.kg);
+  }, [today]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      await loadData();
+    };
+    fetchData();
+    // Add event listener for focus to reload data when returning to tab
+    window.addEventListener('focus', loadData);
+    return () => window.removeEventListener('focus', loadData);
+  }, [loadData]);
+
+  const addWater = async (amount: number) => {
+    await dbActions.addWater({ date: today, amount });
+    loadData();
+  };
+
+  const percentage = Math.min((consumedCalories / calorieGoal) * 100, 100);
+
+  return (
+    <div className="p-4 space-y-6 pb-24">
+      <header>
+        <h1 className="text-2xl font-bold text-gray-800">
+          Olá! <span className="text-2xl">👋</span>
+        </h1>
+        <p className="text-gray-500 text-sm">
+          {format(new Date(), "EEEE, d 'de' MMMM", { locale: ptBR })}
+        </p>
+      </header>
+
+      {/* Calories Card */}
+      <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 relative overflow-hidden">
+        <div className="absolute top-0 right-0 p-4 opacity-10">
+          <Flame size={120} className="text-orange-500" />
+        </div>
+        
+        <h2 className="text-lg font-semibold text-gray-700 mb-4">Resumo Calórico</h2>
+        
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-3xl font-bold text-gray-900">{consumedCalories}</span>
+          <span className="text-sm text-gray-400 font-medium">/ {calorieGoal} kcal</span>
+        </div>
+
+        {/* Progress Bar */}
+        <div className="w-full h-4 bg-gray-100 rounded-full overflow-hidden">
+          <div 
+            className="h-full bg-gradient-to-r from-orange-400 to-red-500 transition-all duration-500 ease-out"
+            style={{ width: `${percentage}%` }}
+          />
+        </div>
+        <p className="mt-2 text-xs text-gray-400 text-right">
+          {Math.max(0, calorieGoal - consumedCalories)} kcal restantes
+        </p>
+      </div>
+
+      {/* Water Tracker */}
+      <div className="bg-blue-50 rounded-3xl p-6 shadow-sm border border-blue-100">
+        <div className="flex justify-between items-start mb-4">
+          <div>
+            <h2 className="text-lg font-semibold text-blue-900">Hidratação</h2>
+            <p className="text-blue-600 text-sm">Mantenha-se hidratado!</p>
+          </div>
+          <div className="bg-white p-2 rounded-full shadow-sm text-blue-500">
+            <Droplet size={24} fill="currentColor" />
+          </div>
+        </div>
+
+        <div className="flex items-end space-x-2 mb-6">
+          <span className="text-4xl font-bold text-blue-900">{waterIntake}</span>
+          <span className="text-blue-600 font-medium mb-1">ml</span>
+        </div>
+
+        <div className="flex space-x-3">
+          <button 
+            onClick={() => addWater(250)}
+            className="flex-1 bg-white hover:bg-blue-100 text-blue-600 py-3 rounded-xl font-semibold shadow-sm border border-blue-100 transition-colors flex items-center justify-center space-x-1"
+          >
+            <Plus size={16} /> <span>250ml</span>
+          </button>
+          <button 
+            onClick={() => addWater(500)}
+            className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-xl font-semibold shadow-md shadow-blue-200 transition-colors flex items-center justify-center space-x-1"
+          >
+             <Plus size={16} /> <span>500ml</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Quick Actions / Weight Status */}
+      <div className="grid grid-cols-2 gap-4">
+        <Link to="/meals" className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col items-center justify-center space-y-2 hover:border-green-200 transition-colors">
+          <div className="bg-green-100 p-3 rounded-full text-green-600">
+            <Plus size={20} />
+          </div>
+          <span className="text-sm font-medium text-gray-700">Add Refeição</span>
+        </Link>
+        
+        <Link to="/weight" className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col items-center justify-center space-y-2 hover:border-purple-200 transition-colors">
+           <div className="bg-purple-100 p-3 rounded-full text-purple-600">
+             {todayWeight ? <span className="font-bold text-sm">{todayWeight}kg</span> : <Plus size={20} />}
+          </div>
+          <span className="text-sm font-medium text-gray-700">{todayWeight ? 'Peso Hoje' : 'Add Peso'}</span>
+        </Link>
+      </div>
+    </div>
+  );
+};
+
+export default Dashboard;
