@@ -28,14 +28,14 @@ const Layout: React.FC = () => {
   const isToday = selectedDate === format(new Date(), 'yyyy-MM-dd');
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50 dark:bg-slate-900 text-gray-900 dark:text-gray-100 transition-colors duration-200">
-      <header className="bg-white dark:bg-slate-800 shadow-sm z-10 px-4 py-3 flex items-center justify-between border-b border-gray-100 dark:border-slate-700">
-        <button onClick={handlePrevDay} className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-full text-gray-600 dark:text-gray-300">
+    <div className="flex flex-col h-screen bg-gray-50 dark:bg-black text-gray-900 dark:text-white transition-colors duration-200">
+      <header className="bg-white dark:bg-gray-900 shadow-sm z-10 px-4 py-3 flex items-center justify-between border-b border-gray-100 dark:border-gray-800">
+        <button onClick={handlePrevDay} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full text-gray-600 dark:text-gray-400">
           <ChevronLeft size={20} />
         </button>
         
         <div className="flex flex-col items-center">
-          <span className="font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2 text-sm sm:text-base capitalize">
+          <span className="font-bold text-gray-800 dark:text-white flex items-center gap-2 text-sm sm:text-base capitalize">
             {isToday ? (
               <>
                 <Calendar size={16} className="text-green-600" />
@@ -48,23 +48,23 @@ const Layout: React.FC = () => {
           {isToday && <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium uppercase tracking-wider">{format(new Date(), "d 'de' MMMM", { locale: ptBR })}</span>}
         </div>
 
-        <button onClick={handleNextDay} className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-full text-gray-600 dark:text-gray-300">
+        <button onClick={handleNextDay} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full text-gray-600 dark:text-gray-400">
           <ChevronRight size={20} />
         </button>
       </header>
 
-      <main className="flex-1 overflow-y-auto pb-20 pt-2 bg-gray-50 dark:bg-slate-900">
+      <main className="flex-1 overflow-y-auto pb-20 pt-2 bg-gray-50 dark:bg-black">
         <Outlet />
       </main>
       
-      <nav className="fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700 safe-area-bottom z-20">
+      <nav className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 safe-area-bottom z-20">
         <div className="flex justify-around items-center h-16">
           <NavLink
             to="/"
             className={({ isActive }) =>
               clsx(
                 "flex flex-col items-center justify-center w-full h-full space-y-1",
-                isActive ? "text-green-600" : "text-gray-500 hover:text-green-500"
+                isActive ? "text-green-600" : "text-gray-500 hover:text-green-500 dark:text-gray-500 dark:hover:text-green-400"
               )
             }
           >

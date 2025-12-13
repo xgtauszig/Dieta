@@ -41,7 +41,7 @@ const SettingsPage: React.FC = () => {
     <div className="p-4 space-y-6">
       <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Ajustes</h1>
       
-      <Link to="/foods" className="block bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">
+      <Link to="/foods" className="block bg-white dark:bg-gray-900 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
         <div className="flex items-center space-x-3">
           <div className="bg-orange-100 dark:bg-orange-900 p-2 rounded-full text-orange-600 dark:text-orange-300">
             <UtensilsCrossed size={20} />
@@ -51,7 +51,7 @@ const SettingsPage: React.FC = () => {
         <ChevronRight size={20} className="text-gray-400 dark:text-gray-500" />
       </Link>
 
-      <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700">
+      <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800">
         <label htmlFor="calorieGoal" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
           Meta Diária de Calorias
         </label>
@@ -61,7 +61,7 @@ const SettingsPage: React.FC = () => {
             id="calorieGoal"
             value={calorieGoal}
             onChange={(e) => setCalorieGoal(Number(e.target.value))}
-            className="block w-full rounded-lg border-gray-300 bg-gray-50 p-3 text-lg focus:border-green-500 focus:ring-green-500 shadow-inner dark:bg-slate-900 dark:border-slate-600 dark:text-white"
+            className="block w-full rounded-lg border-gray-300 bg-gray-50 p-3 text-lg focus:border-green-500 focus:ring-green-500 shadow-inner dark:bg-black dark:border-gray-700 dark:text-white"
           />
           <span className="text-gray-500 dark:text-gray-400 font-medium">kcal</span>
         </div>
@@ -70,7 +70,7 @@ const SettingsPage: React.FC = () => {
         </p>
       </div>
 
-      <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 flex items-center justify-between">
+      <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 flex items-center justify-between">
         <span className="font-medium text-gray-700 dark:text-gray-200">Modo Escuro</span>
         <button
           onClick={() => setDarkMode(!darkMode)}

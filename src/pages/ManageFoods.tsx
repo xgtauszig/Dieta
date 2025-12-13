@@ -215,8 +215,8 @@ const ManageFoods: React.FC = () => {
     <div className="p-4 space-y-6 pb-24">
        <header className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Meus Alimentos</h1>
-          <p className="text-gray-500 text-sm">Gerencie sua despensa e receitas</p>
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Meus Alimentos</h1>
+          <p className="text-gray-500 dark:text-gray-400 text-sm">Gerencie sua despensa e receitas</p>
         </div>
         <div className="flex space-x-2">
            <button
@@ -238,17 +238,17 @@ const ManageFoods: React.FC = () => {
 
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-           <div className="bg-white w-full max-w-lg rounded-2xl p-6 space-y-4 animate-in fade-in zoom-in duration-200 max-h-[90vh] overflow-y-auto">
+           <div className="bg-white dark:bg-gray-900 w-full max-w-lg rounded-2xl p-6 space-y-4 animate-in fade-in zoom-in duration-200 max-h-[90vh] overflow-y-auto">
              <div className="flex justify-between items-center mb-2">
-               <h2 className="text-xl font-bold">{editingId ? 'Editar' : 'Novo'} {isRecipeMode ? 'Receita' : 'Alimento'}</h2>
-               <button onClick={() => setIsModalOpen(false)}><X size={24} className="text-gray-500" /></button>
+               <h2 className="text-xl font-bold dark:text-white">{editingId ? 'Editar' : 'Novo'} {isRecipeMode ? 'Receita' : 'Alimento'}</h2>
+               <button onClick={() => setIsModalOpen(false)}><X size={24} className="text-gray-500 dark:text-gray-400" /></button>
              </div>
              
              <form onSubmit={handleSave} className="space-y-4">
                <div>
-                 <label className="block text-sm font-medium text-gray-700">Nome</label>
+                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Nome</label>
                  <input 
-                   className="w-full p-3 bg-gray-50 rounded-xl border border-gray-200" 
+                   className="w-full p-3 bg-gray-50 dark:bg-black rounded-xl border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-white"
                    value={name} onChange={e => setName(e.target.value)} 
                    placeholder={isRecipeMode ? "Ex: Torta de Frango" : "Ex: Arroz Integral"}
                    required
@@ -256,8 +256,8 @@ const ManageFoods: React.FC = () => {
                </div>
 
                {isRecipeMode ? (
-                 <div className="space-y-4 border-t border-b border-gray-100 py-4">
-                    <h3 className="font-semibold text-gray-700">Ingredientes</h3>
+                 <div className="space-y-4 border-t border-b border-gray-100 dark:border-gray-800 py-4">
+                    <h3 className="font-semibold text-gray-700 dark:text-gray-300">Ingredientes</h3>
                     <div className="relative">
                        <Search size={16} className="absolute left-3 top-3 text-gray-400" />
                        <input
@@ -265,19 +265,19 @@ const ManageFoods: React.FC = () => {
                          placeholder="Buscar ingrediente..."
                          value={recipeSearch}
                          onChange={e => setRecipeSearch(e.target.value)}
-                         className="w-full pl-9 p-2 rounded-lg border border-gray-200 text-sm"
+                         className="w-full pl-9 p-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-black text-sm dark:text-white"
                        />
                        {recipeSearchResults.length > 0 && (
-                         <div className="absolute top-full left-0 right-0 bg-white border border-gray-100 rounded-lg shadow-lg z-20 mt-1 max-h-40 overflow-y-auto">
+                         <div className="absolute top-full left-0 right-0 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-lg shadow-lg z-20 mt-1 max-h-40 overflow-y-auto">
                             {recipeSearchResults.map(res => (
                               <div
                                 key={res.id}
                                 onClick={() => handleAddIngredient(res)}
-                                className="p-2 hover:bg-gray-50 cursor-pointer text-sm border-b last:border-0"
+                                className="p-2 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer text-sm border-b border-gray-100 dark:border-gray-800 last:border-0 dark:text-gray-200"
                               >
                                 {res.name}
-                                {res.origin === 'tbca' && <span className="ml-2 text-[10px] bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded-full">TBCA</span>}
-                                {res.origin === 'user' && <span className="ml-2 text-[10px] bg-green-100 text-green-800 px-1.5 py-0.5 rounded-full">Meus</span>}
+                                {res.origin === 'tbca' && <span className="ml-2 text-[10px] bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 px-1.5 py-0.5 rounded-full">TBCA</span>}
+                                {res.origin === 'user' && <span className="ml-2 text-[10px] bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 px-1.5 py-0.5 rounded-full">Meus</span>}
                               </div>
                             ))}
                          </div>
@@ -286,28 +286,28 @@ const ManageFoods: React.FC = () => {
 
                     <div className="space-y-2 max-h-40 overflow-y-auto">
                        {recipeIngredients.map((ing, idx) => (
-                         <div key={idx} className="flex justify-between items-center bg-gray-50 p-2 rounded text-sm">
-                            <span className="flex-1 truncate pr-2">{ing.name}</span>
+                         <div key={idx} className="flex justify-between items-center bg-gray-50 dark:bg-gray-800 p-2 rounded text-sm">
+                            <span className="flex-1 truncate pr-2 dark:text-white">{ing.name}</span>
                             <div className="flex items-center space-x-2">
                               <input
                                 type="number"
                                 value={ing.quantity}
                                 onChange={e => updateIngredientQuantity(idx, Number(e.target.value))}
-                                className="w-16 p-1 border rounded text-right"
+                                className="w-16 p-1 border dark:border-gray-700 rounded text-right dark:bg-black dark:text-white"
                               />
-                              <span className="text-xs text-gray-500">g</span>
-                              <button type="button" onClick={() => removeIngredient(idx)} className="text-red-400"><X size={16} /></button>
+                              <span className="text-xs text-gray-500 dark:text-gray-400">g</span>
+                              <button type="button" onClick={() => removeIngredient(idx)} className="text-red-400 hover:text-red-500"><X size={16} /></button>
                             </div>
                          </div>
                        ))}
                     </div>
 
-                    <div className="bg-orange-50 p-3 rounded-lg text-sm space-y-2">
-                       <div className="flex justify-between font-bold text-orange-800">
+                    <div className="bg-orange-50 dark:bg-orange-900/20 p-3 rounded-lg text-sm space-y-2">
+                       <div className="flex justify-between font-bold text-orange-800 dark:text-orange-400">
                           <span>Total Ingredientes:</span>
                           <span>{totalWeight}g</span>
                        </div>
-                       <div className="grid grid-cols-4 gap-1 text-center text-xs">
+                       <div className="grid grid-cols-4 gap-1 text-center text-xs dark:text-orange-300">
                           <div>
                             <span className="block font-bold">Kcal</span>
                             {totalCals.toFixed(0)}
@@ -328,9 +328,9 @@ const ManageFoods: React.FC = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <label className="block text-sm font-medium text-gray-700">Calcular por:</label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Calcular por:</label>
                       <div className="flex space-x-4 mb-2">
-                        <label className="flex items-center space-x-2 cursor-pointer">
+                        <label className="flex items-center space-x-2 cursor-pointer dark:text-gray-300">
                           <input
                             type="radio"
                             name="recipeMode"
@@ -339,7 +339,7 @@ const ManageFoods: React.FC = () => {
                           />
                           <span>Peso Final (g)</span>
                         </label>
-                        <label className="flex items-center space-x-2 cursor-pointer">
+                        <label className="flex items-center space-x-2 cursor-pointer dark:text-gray-300">
                           <input
                             type="radio"
                             name="recipeMode"
@@ -352,10 +352,10 @@ const ManageFoods: React.FC = () => {
 
                       {recipeCalculationMode === 'weight' ? (
                         <div>
-                           <label className="block text-xs text-gray-500">Peso pronto (cozido)</label>
+                           <label className="block text-xs text-gray-500 dark:text-gray-400">Peso pronto (cozido)</label>
                            <input
                              type="number"
-                             className="w-full p-2 bg-gray-50 rounded-lg border border-gray-200"
+                             className="w-full p-2 bg-gray-50 dark:bg-black rounded-lg border border-gray-200 dark:border-gray-800 dark:text-white"
                              placeholder={`Soma: ${totalWeight}`}
                              value={recipeFinalWeight}
                              onChange={e => setRecipeFinalWeight(e.target.value)}
@@ -364,10 +364,10 @@ const ManageFoods: React.FC = () => {
                         </div>
                       ) : (
                         <div>
-                           <label className="block text-xs text-gray-500">Número de Porções</label>
+                           <label className="block text-xs text-gray-500 dark:text-gray-400">Número de Porções</label>
                            <input
                              type="number"
-                             className="w-full p-2 bg-gray-50 rounded-lg border border-gray-200"
+                             className="w-full p-2 bg-gray-50 dark:bg-black rounded-lg border border-gray-200 dark:border-gray-800 dark:text-white"
                              placeholder="Ex: 8"
                              value={recipePortions}
                              onChange={e => setRecipePortions(e.target.value)}
@@ -380,19 +380,19 @@ const ManageFoods: React.FC = () => {
                ) : (
                  <div className="grid grid-cols-2 gap-3">
                    <div>
-                     <label className="block text-sm font-medium text-gray-700 truncate">Qtd Base</label>
+                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 truncate">Qtd Base</label>
                      <input
                        type="number" step="0.1"
-                       className="w-full p-3 bg-gray-50 rounded-xl border border-gray-200"
+                       className="w-full p-3 bg-gray-50 dark:bg-black rounded-xl border border-gray-200 dark:border-gray-800 dark:text-white"
                        value={baseQuantity} onChange={e => setBaseQuantity(e.target.value)}
                        placeholder="1"
                        required
                      />
                    </div>
                    <div>
-                     <label className="block text-sm font-medium text-gray-700 truncate">Unidade</label>
+                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 truncate">Unidade</label>
                      <select
-                       className="w-full p-3 bg-gray-50 rounded-xl border border-gray-200"
+                       className="w-full p-3 bg-gray-50 dark:bg-black rounded-xl border border-gray-200 dark:border-gray-800 dark:text-white"
                        value={unit} onChange={e => setUnit(e.target.value)}
                      >
                        <option value="g">g</option>
@@ -404,20 +404,20 @@ const ManageFoods: React.FC = () => {
                    </div>
                    <div className="col-span-2 grid grid-cols-4 gap-2">
                       <div>
-                        <label className="block text-xs font-bold text-gray-500 uppercase">Kcal</label>
-                        <input type="number" step="0.1" className="w-full p-2 border rounded" value={calories} onChange={e => setCalories(e.target.value)} required />
+                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Kcal</label>
+                        <input type="number" step="0.1" className="w-full p-2 border dark:border-gray-700 rounded dark:bg-black dark:text-white" value={calories} onChange={e => setCalories(e.target.value)} required />
                       </div>
                       <div>
-                        <label className="block text-xs font-bold text-gray-500 uppercase">Prot</label>
-                        <input type="number" step="0.1" className="w-full p-2 border rounded" value={protein} onChange={e => setProtein(e.target.value)} />
+                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Prot</label>
+                        <input type="number" step="0.1" className="w-full p-2 border dark:border-gray-700 rounded dark:bg-black dark:text-white" value={protein} onChange={e => setProtein(e.target.value)} />
                       </div>
                       <div>
-                        <label className="block text-xs font-bold text-gray-500 uppercase">Carb</label>
-                        <input type="number" step="0.1" className="w-full p-2 border rounded" value={carbs} onChange={e => setCarbs(e.target.value)} />
+                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Carb</label>
+                        <input type="number" step="0.1" className="w-full p-2 border dark:border-gray-700 rounded dark:bg-black dark:text-white" value={carbs} onChange={e => setCarbs(e.target.value)} />
                       </div>
                       <div>
-                        <label className="block text-xs font-bold text-gray-500 uppercase">Gord</label>
-                        <input type="number" step="0.1" className="w-full p-2 border rounded" value={fat} onChange={e => setFat(e.target.value)} />
+                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Gord</label>
+                        <input type="number" step="0.1" className="w-full p-2 border dark:border-gray-700 rounded dark:bg-black dark:text-white" value={fat} onChange={e => setFat(e.target.value)} />
                       </div>
                    </div>
                  </div>
@@ -433,28 +433,28 @@ const ManageFoods: React.FC = () => {
 
       <div className="space-y-3">
         {foods.map(food => (
-          <div key={food.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center">
+          <div key={food.id} className="bg-white dark:bg-gray-900 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 flex justify-between items-center">
             <div className="flex items-center space-x-3">
               {food.isRecipe ? <ChefHat size={20} className="text-orange-500" /> : <div className="w-5" />}
               <div>
-                <h3 className="font-semibold text-gray-800">{food.name}</h3>
-                <div className="flex space-x-2 text-xs text-gray-500 mt-1">
+                <h3 className="font-semibold text-gray-800 dark:text-white">{food.name}</h3>
+                <div className="flex space-x-2 text-xs text-gray-500 dark:text-gray-400 mt-1">
                    <span>{food.caloriesPerUnit} kcal</span>
-                   <span className="text-gray-300">|</span>
+                   <span className="text-gray-300 dark:text-gray-600">|</span>
                    <span>P: {food.protein || 0}g</span>
                    <span>C: {food.carbohydrate || 0}g</span>
                    <span>G: {food.lipid || 0}g</span>
                 </div>
-                <p className="text-[10px] text-gray-400">Por {food.baseQuantity} {food.unit}</p>
+                <p className="text-[10px] text-gray-400 dark:text-gray-500">Por {food.baseQuantity} {food.unit}</p>
               </div>
             </div>
             <div className="flex space-x-2">
-              <button onClick={() => openModal(food, food.isRecipe ? 'recipe' : 'food')} className="text-blue-400 p-2 hover:bg-blue-50 rounded-full">
+              <button onClick={() => openModal(food, food.isRecipe ? 'recipe' : 'food')} className="text-blue-400 p-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full">
                 <Pencil size={18} />
               </button>
               <button
                 onClick={() => food.id && typeof food.id === 'number' && handleDelete(food.id)}
-                className={`text-red-400 p-2 hover:bg-red-50 rounded-full ${typeof food.id !== 'number' ? 'opacity-30 cursor-not-allowed' : ''}`}
+                className={`text-red-400 p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full ${typeof food.id !== 'number' ? 'opacity-30 cursor-not-allowed' : ''}`}
                 disabled={typeof food.id !== 'number'}
                 title={typeof food.id !== 'number' ? 'Não é possível apagar alimentos do sistema' : 'Apagar'}
               >
@@ -465,7 +465,7 @@ const ManageFoods: React.FC = () => {
         ))}
         
         {foods.length === 0 && !isModalOpen && (
-          <div className="text-center text-gray-400 py-10">
+          <div className="text-center text-gray-400 dark:text-gray-600 py-10">
             <p>Nenhum alimento cadastrado.</p>
             <p className="text-sm mt-2">Clique em + para adicionar ingredientes ou no chapéu para receitas.</p>
           </div>

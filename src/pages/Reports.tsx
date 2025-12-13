@@ -77,19 +77,19 @@ const ReportsPage: React.FC = () => {
     <div className="p-4 space-y-6 pb-24">
        <header className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Relatórios</h1>
-          <p className="text-gray-500 text-sm">Histórico de Consumo</p>
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Relatórios</h1>
+          <p className="text-gray-500 dark:text-gray-400 text-sm">Histórico de Consumo</p>
         </div>
-        <div className="bg-gray-100 rounded-lg p-1 flex text-xs font-medium">
+        <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-1 flex text-xs font-medium">
            <button
              onClick={() => setViewMode('calories')}
-             className={`px-3 py-1 rounded-md transition-all ${viewMode === 'calories' ? 'bg-white shadow text-gray-800' : 'text-gray-500'}`}
+             className={`px-3 py-1 rounded-md transition-all ${viewMode === 'calories' ? 'bg-white dark:bg-gray-700 shadow text-gray-800 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}
            >
              Calorias
            </button>
            <button
              onClick={() => setViewMode('macros')}
-             className={`px-3 py-1 rounded-md transition-all ${viewMode === 'macros' ? 'bg-white shadow text-gray-800' : 'text-gray-500'}`}
+             className={`px-3 py-1 rounded-md transition-all ${viewMode === 'macros' ? 'bg-white dark:bg-gray-700 shadow text-gray-800 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}
            >
              Macros
            </button>
@@ -97,29 +97,29 @@ const ReportsPage: React.FC = () => {
       </header>
 
       {/* Filter Tabs */}
-      <div className="flex bg-gray-100 p-1 rounded-xl">
+      <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-xl">
         <button 
           onClick={() => setPeriod('7')}
-          className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${period === '7' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500 hover:text-gray-600'}`}
+          className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${period === '7' ? 'bg-white dark:bg-gray-700 text-gray-800 dark:text-white shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'}`}
         >
           7 Dias
         </button>
         <button 
           onClick={() => setPeriod('30')}
-          className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${period === '30' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500 hover:text-gray-600'}`}
+          className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${period === '30' ? 'bg-white dark:bg-gray-700 text-gray-800 dark:text-white shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'}`}
         >
           30 Dias
         </button>
         <button 
           onClick={() => setPeriod('all')}
-          className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${period === 'all' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500 hover:text-gray-600'}`}
+          className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${period === 'all' ? 'bg-white dark:bg-gray-700 text-gray-800 dark:text-white shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'}`}
         >
           Tudo
         </button>
       </div>
 
       {/* Chart */}
-      <div className="bg-white p-4 rounded-3xl shadow-sm border border-gray-100 h-80">
+      <div className="bg-white dark:bg-gray-900 p-4 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 h-80">
          {data.length > 0 ? (
            <ResponsiveContainer width="100%" height="100%">
              {viewMode === 'calories' ? (
@@ -188,39 +188,39 @@ const ReportsPage: React.FC = () => {
       <div className="grid grid-cols-2 gap-4">
         {viewMode === 'calories' ? (
           <>
-            <div className="bg-green-50 p-4 rounded-2xl border border-green-100">
-              <p className="text-xs text-green-600 uppercase font-bold mb-1">Média Diária</p>
-              <p className="text-2xl font-bold text-green-900">
+            <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-2xl border border-green-100 dark:border-green-900/50">
+              <p className="text-xs text-green-600 dark:text-green-400 uppercase font-bold mb-1">Média Diária</p>
+              <p className="text-2xl font-bold text-green-900 dark:text-green-100">
                 {data.length > 0 ? Math.round(data.reduce((acc, curr) => acc + curr.calories, 0) / data.length) : 0}
-                <span className="text-sm text-green-600 font-medium ml-1">kcal</span>
+                <span className="text-sm text-green-600 dark:text-green-400 font-medium ml-1">kcal</span>
               </p>
             </div>
-            <div className="bg-orange-50 p-4 rounded-2xl border border-orange-100">
-              <p className="text-xs text-orange-600 uppercase font-bold mb-1">Dias na Meta</p>
-              <p className="text-2xl font-bold text-orange-900">
+            <div className="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-2xl border border-orange-100 dark:border-orange-900/50">
+              <p className="text-xs text-orange-600 dark:text-orange-400 uppercase font-bold mb-1">Dias na Meta</p>
+              <p className="text-2xl font-bold text-orange-900 dark:text-orange-100">
                 {data.filter(d => d.calories <= goal && d.calories > 0).length}
-                <span className="text-sm text-orange-600 font-medium ml-1">dias</span>
+                <span className="text-sm text-orange-600 dark:text-orange-400 font-medium ml-1">dias</span>
               </p>
             </div>
           </>
         ) : (
           <>
              <div className="col-span-2 grid grid-cols-3 gap-2">
-                <div className="bg-blue-50 p-3 rounded-xl border border-blue-100 text-center">
-                   <p className="text-[10px] text-blue-600 uppercase font-bold">Proteína</p>
-                   <p className="text-lg font-bold text-blue-900">
+                <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-xl border border-blue-100 dark:border-blue-900/50 text-center">
+                   <p className="text-[10px] text-blue-600 dark:text-blue-400 uppercase font-bold">Proteína</p>
+                   <p className="text-lg font-bold text-blue-900 dark:text-blue-100">
                      {data.length > 0 ? Math.round(data.reduce((acc, curr) => acc + curr.protein, 0) / data.length) : 0}g
                    </p>
                 </div>
-                <div className="bg-yellow-50 p-3 rounded-xl border border-yellow-100 text-center">
-                   <p className="text-[10px] text-yellow-600 uppercase font-bold">Carb.</p>
-                   <p className="text-lg font-bold text-yellow-900">
+                <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-xl border border-yellow-100 dark:border-yellow-900/50 text-center">
+                   <p className="text-[10px] text-yellow-600 dark:text-yellow-400 uppercase font-bold">Carb.</p>
+                   <p className="text-lg font-bold text-yellow-900 dark:text-yellow-100">
                      {data.length > 0 ? Math.round(data.reduce((acc, curr) => acc + curr.carbs, 0) / data.length) : 0}g
                    </p>
                 </div>
-                <div className="bg-red-50 p-3 rounded-xl border border-red-100 text-center">
-                   <p className="text-[10px] text-red-600 uppercase font-bold">Gordura</p>
-                   <p className="text-lg font-bold text-red-900">
+                <div className="bg-red-50 dark:bg-red-900/20 p-3 rounded-xl border border-red-100 dark:border-red-900/50 text-center">
+                   <p className="text-[10px] text-red-600 dark:text-red-400 uppercase font-bold">Gordura</p>
+                   <p className="text-lg font-bold text-red-900 dark:text-red-100">
                      {data.length > 0 ? Math.round(data.reduce((acc, curr) => acc + curr.fat, 0) / data.length) : 0}g
                    </p>
                 </div>
