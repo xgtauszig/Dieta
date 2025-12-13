@@ -382,7 +382,10 @@ const MealsPage: React.FC = () => {
                               onClick={() => handleSelectFood(food)}
                             >
                               <span className="font-medium">{food.name}</span>
-                              <span className="text-gray-400 text-xs ml-2">({food.origin === 'taco' ? 'TACO' : 'Meus'})</span>
+                              <span className="text-gray-400 text-xs ml-2">
+                                {food.origin === 'tbca' && <span className="ml-2 text-[10px] bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded-full">TBCA</span>}
+                                {food.origin === 'user' && <span className="ml-2 text-[10px] bg-green-100 text-green-800 px-1.5 py-0.5 rounded-full">Meus</span>}
+                              </span>
                             </div>
                           ))}
                         </div>

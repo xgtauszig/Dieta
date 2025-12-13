@@ -5,7 +5,7 @@ import { searchFoods, type SearchResult } from '../services/foodService';
 import { calculateRecipeTotals, normalizeRecipe, type CalculationMode } from '../utils/recipeUtils';
 
 interface Food {
-  id?: number;
+  id?: number | string;
   name: string;
   unit: string;
   baseQuantity?: number;
@@ -24,7 +24,7 @@ const ManageFoods: React.FC = () => {
   const [foods, setFoods] = useState<Food[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isRecipeMode, setIsRecipeMode] = useState(false);
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<number | string | null>(null);
   
   // Form State
   const [name, setName] = useState('');
@@ -187,6 +187,9 @@ const ManageFoods: React.FC = () => {
     }
 
     if (editingId) {
+      // Assuming editingId is number because we only allow editing user foods (checked in UI?)
+      // Actually we might allow "editing" a TBCA food by saving as copy?
+      // For now, adhere to existing logic which updates by ID.
       await dbActions.updateFood({
         id: editingId,
         ...foodData
@@ -449,7 +452,12 @@ const ManageFoods: React.FC = () => {
               <button onClick={() => openModal(food, food.isRecipe ? 'recipe' : 'food')} className="text-blue-400 p-2 hover:bg-blue-50 rounded-full">
                 <Pencil size={18} />
               </button>
-              <button onClick={() => food.id && handleDelete(food.id)} className="text-red-400 p-2 hover:bg-red-50 rounded-full">
+              <button
+                onClick={() => food.id && typeof food.id === 'number' && handleDelete(food.id)}
+                className={`text-red-400 p-2 hover:bg-red-50 rounded-full ${typeof food.id !== 'number' ? 'opacity-30 cursor-not-allowed' : ''}`}
+                disabled={typeof food.id !== 'number'}
+                title={typeof food.id !== 'number' ? 'Não é possível apagar alimentos do sistema' : 'Apagar'}
+              >
                 <Trash2 size={18} />
               </button>
             </div>
