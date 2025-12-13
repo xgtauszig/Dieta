@@ -63,8 +63,8 @@ const WeightPage: React.FC = () => {
     <div className="p-4 space-y-6 pb-24">
       <header className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Peso</h1>
-          <p className="text-gray-500 text-sm">Acompanhe seu progresso</p>
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Peso</h1>
+          <p className="text-gray-500 dark:text-gray-400 text-sm">Acompanhe seu progresso</p>
         </div>
         <button
           onClick={() => setIsAdding(!isAdding)}
@@ -75,15 +75,15 @@ const WeightPage: React.FC = () => {
       </header>
 
       {isAdding && (
-        <form onSubmit={handleAddWeight} className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 animate-in slide-in-from-top-4 fade-in">
-           <label className="block text-sm font-medium text-gray-700 mb-2">Peso de hoje (kg)</label>
+        <form onSubmit={handleAddWeight} className="bg-white dark:bg-gray-900 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 animate-in slide-in-from-top-4 fade-in">
+           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Peso de hoje (kg)</label>
            <div className="flex space-x-2">
              <input
               type="number"
               step="0.1"
               value={currentWeight}
               onChange={(e) => setCurrentWeight(e.target.value)}
-              className="flex-1 p-3 bg-gray-50 rounded-xl border-gray-200 focus:ring-purple-500 focus:border-purple-500"
+              className="flex-1 p-3 bg-gray-50 dark:bg-black rounded-xl border-gray-200 dark:border-gray-700 focus:ring-purple-500 focus:border-purple-500 dark:text-white"
               placeholder="Ex: 70.5"
               autoFocus
              />
@@ -95,7 +95,7 @@ const WeightPage: React.FC = () => {
       )}
 
       {/* Chart Section */}
-      <div className="bg-white p-4 rounded-3xl shadow-sm border border-gray-100 h-64">
+      <div className="bg-white dark:bg-gray-900 p-4 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 h-64">
         {weights.length > 1 ? (
            <ResponsiveContainer width="100%" height="100%">
              <LineChart data={chartData}>
@@ -124,7 +124,7 @@ const WeightPage: React.FC = () => {
              </LineChart>
            </ResponsiveContainer>
         ) : (
-          <div className="h-full flex flex-col items-center justify-center text-gray-400">
+          <div className="h-full flex flex-col items-center justify-center text-gray-400 dark:text-gray-600">
             <Scale size={48} className="mb-2 opacity-50" />
             <p className="text-center text-sm">Adicione pelo menos 2 registros<br/>para ver o gráfico.</p>
           </div>
@@ -133,14 +133,14 @@ const WeightPage: React.FC = () => {
 
       {/* History List */}
       <div className="space-y-3">
-        <h3 className="font-semibold text-gray-700 ml-1">Histórico</h3>
+        <h3 className="font-semibold text-gray-700 dark:text-gray-300 ml-1">Histórico</h3>
         {weights.slice().reverse().map((entry) => (
-          <div key={entry.id} className="bg-white p-4 rounded-xl border border-gray-100 flex justify-between items-center">
-            <span className="text-gray-600">
+          <div key={entry.id} className="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-100 dark:border-gray-800 flex justify-between items-center">
+            <span className="text-gray-600 dark:text-gray-400">
               {format(parseISO(entry.date), "d 'de' MMMM", { locale: ptBR })}
             </span>
             <div className="flex items-center space-x-3">
-              <span className="font-bold text-gray-900">{entry.kg} kg</span>
+              <span className="font-bold text-gray-900 dark:text-white">{entry.kg} kg</span>
               <button 
                 onClick={() => entry.id && handleDelete(entry.id)}
                 className="text-red-300 hover:text-red-500 p-1"
@@ -151,7 +151,7 @@ const WeightPage: React.FC = () => {
           </div>
         ))}
         {weights.length === 0 && (
-          <p className="text-gray-400 text-center py-4">Nenhum registro encontrado.</p>
+          <p className="text-gray-400 dark:text-gray-600 text-center py-4">Nenhum registro encontrado.</p>
         )}
       </div>
     </div>
