@@ -272,7 +272,9 @@ const ManageFoods: React.FC = () => {
                                 onClick={() => handleAddIngredient(res)}
                                 className="p-2 hover:bg-gray-50 cursor-pointer text-sm border-b last:border-0"
                               >
-                                {res.name} <span className="text-xs text-gray-400">({res.origin === 'taco' ? 'TACO' : 'Meus'})</span>
+                                {res.name}
+                                {res.origin === 'tbca' && <span className="ml-2 text-[10px] bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded-full">TBCA</span>}
+                                {res.origin === 'user' && <span className="ml-2 text-[10px] bg-green-100 text-green-800 px-1.5 py-0.5 rounded-full">Meus</span>}
                               </div>
                             ))}
                          </div>
