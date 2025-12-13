@@ -2,34 +2,34 @@ import Fuse from 'fuse.js';
 import { dbActions, type Food } from '../db';
 
 export interface SearchResult extends Food {
-  origin: 'taco' | 'user';
+  origin: 'tbca' | 'user';
 }
 
-let tacoFoods: any[] | null = null;
-let fuseTaco: Fuse<any> | null = null;
+let tbcaFoods: any[] | null = null;
+let fuseTbca: Fuse<any> | null = null;
 
-const loadTacoData = async () => {
-  if (tacoFoods) return;
+const loadTbcaData = async () => {
+  if (tbcaFoods) return;
 
   try {
     // Dynamic import allows Vite to bundle this JSON file into a chunk
-    const module = await import('../data/taco_food_db.json');
+    const module = await import('../data/tbca_database.json');
     // Handle both default export (if JSON treated as module) and direct import
     const data = module.default || module;
-    tacoFoods = data;
+    tbcaFoods = data;
 
-    fuseTaco = new Fuse(tacoFoods || [], {
-      keys: ['description'],
-      threshold: 0.4,
+    fuseTbca = new Fuse(tbcaFoods || [], {
+      keys: ['nome', 'grupo'],
+      threshold: 0.3, // Slightly stricter to avoid garbage results
       ignoreLocation: true
     });
   } catch (error) {
-    console.error("Failed to load TACO data", error);
+    console.error("Failed to load TBCA data", error);
   }
 };
 
 export const searchFoods = async (query: string): Promise<SearchResult[]> => {
-  await loadTacoData();
+  await loadTbcaData();
 
   const userFoods = await dbActions.getAllFoods();
   const fuseUser = new Fuse(userFoods, {
@@ -43,26 +43,23 @@ export const searchFoods = async (query: string): Promise<SearchResult[]> => {
     origin: 'user' as const
   }));
 
-  const tacoResults = fuseTaco?.search(query).map(result => {
+  const tbcaResults = fuseTbca?.search(query).map(result => {
     const item = result.item;
-    // Map TACO fields to Food interface
-    // TACO structure: description, energy_kcal, protein_g, carbohydrate_g, lipid_g, etc.
-    // Usually per 100g.
+    // TBCA structure: id, nome, grupo, calorias, proteinas, carboidratos, gorduras (already cleaned by script)
+    // baseQuantity: 100, unit: 'g'
     return {
-      id: item.id, // TACO IDs might conflict with User IDs if we are not careful, but here we treat them as ephemeral search results mostly.
-                   // Actually, saving them to DB later might create new ID.
-                   // For now, let's keep original ID but handle it carefully.
-      name: item.description,
-      unit: 'g',
-      baseQuantity: 100,
-      caloriesPerUnit: typeof item.energy_kcal === 'number' ? item.energy_kcal : 0,
-      protein: typeof item.protein_g === 'number' ? item.protein_g : 0,
-      carbohydrate: typeof item.carbohydrate_g === 'number' ? item.carbohydrate_g : 0,
-      lipid: typeof item.lipid_g === 'number' ? item.lipid_g : 0,
-      origin: 'taco' as const
+      id: item.id,
+      name: item.nome,
+      unit: item.unit || 'g',
+      baseQuantity: item.baseQuantity || 100,
+      caloriesPerUnit: typeof item.calorias === 'number' ? item.calorias : 0,
+      protein: typeof item.proteinas === 'number' ? item.proteinas : 0,
+      carbohydrate: typeof item.carboidratos === 'number' ? item.carboidratos : 0,
+      lipid: typeof item.gorduras === 'number' ? item.gorduras : 0,
+      origin: 'tbca' as const
     };
   }) || [];
 
-  // Merge and return. Prioritize user foods?
-  return [...userResults, ...tacoResults];
+  // Merge and return. Prioritize user foods.
+  return [...userResults, ...tbcaResults];
 };

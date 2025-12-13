@@ -40,7 +40,7 @@ export interface Settings {
 }
 
 export interface Food {
-  id?: number;
+  id?: number | string;
   name: string;
   unit: string; // e.g., 'g', 'ml', 'unit', 'tbsp', 'tsp'
   baseQuantity?: number;
