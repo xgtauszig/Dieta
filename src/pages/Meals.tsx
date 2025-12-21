@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { dbActions, type MealItem } from '../db';
-import { Camera, Plus, X, Trash2, Search, Copy } from 'lucide-react';
+import { Camera, Plus, X, Trash2, Search, Copy, Zap } from 'lucide-react';
 import { useDate } from '../contexts/DateContext';
 import { searchFoods, type SearchResult } from '../services/foodService';
+import QuickLogModal, { type QuickLogOption } from '../components/QuickLogModal';
 
 interface Meal {
   id?: number;
@@ -20,6 +21,8 @@ const MealsPage: React.FC = () => {
   const { selectedDate } = useDate();
   const [meals, setMeals] = useState<Meal[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isQuickLogOpen, setIsQuickLogOpen] = useState(false);
+  const [calorieGoal, setCalorieGoal] = useState(2000);
   
   // Meal Form State
   const [editingMealId, setEditingMealId] = useState<number | null>(null);
@@ -46,6 +49,12 @@ const MealsPage: React.FC = () => {
   const loadMeals = React.useCallback(async () => {
     const dailyMeals = await dbActions.getMealsByDate(selectedDate);
     setMeals(dailyMeals);
+
+    // Load Calorie Goal
+    const goal = await dbActions.getSetting('calorieGoal');
+    if (typeof goal === 'number') {
+      setCalorieGoal(goal);
+    }
   }, [selectedDate]);
 
   useEffect(() => {
@@ -54,6 +63,81 @@ const MealsPage: React.FC = () => {
     };
     fetchMeals();
   }, [loadMeals]);
+
+  const calculateAverageMacros = async () => {
+    // Get last 7 days meals
+    const allMeals = await dbActions.getAllMeals();
+    const today = new Date();
+    const sevenDaysAgo = new Date(today);
+    sevenDaysAgo.setDate(today.getDate() - 7);
+
+    // Convert selectedDate to Date object for comparison if needed,
+    // but here we just want recent history excluding today to be safe or including it
+    // Let's just take all meals within the last 7 days window
+
+    const recentMeals = allMeals.filter(m => {
+      const mDate = new Date(m.date);
+      return mDate >= sevenDaysAgo && mDate <= today;
+    });
+
+    if (recentMeals.length === 0) {
+      return { protein: 0.3, carbohydrate: 0.5, lipid: 0.2 }; // Default
+    }
+
+    const totals = recentMeals.reduce((acc, meal) => ({
+      p: acc.p + (meal.protein || 0) * 4, // 4 kcal/g
+      c: acc.c + (meal.carbohydrate || 0) * 4, // 4 kcal/g
+      f: acc.f + (meal.lipid || 0) * 9, // 9 kcal/g
+      totalCal: acc.totalCal + meal.calories
+    }), { p: 0, c: 0, f: 0, totalCal: 0 });
+
+    if (totals.totalCal === 0) return { protein: 0.3, carbohydrate: 0.5, lipid: 0.2 };
+
+    return {
+      protein: totals.p / totals.totalCal,
+      carbohydrate: totals.c / totals.totalCal,
+      lipid: totals.f / totals.totalCal
+    };
+  };
+
+  const handleQuickLog = async (option: QuickLogOption) => {
+    // Check if meals exist
+    if (meals.length > 0) {
+      if (!confirm(`Isso apagará as ${meals.length} refeições registradas hoje. Continuar?`)) {
+        return;
+      }
+      // Delete existing meals
+      for (const meal of meals) {
+        if (meal.id) await dbActions.deleteMeal(meal.id);
+      }
+    }
+
+    const targetCalories = Math.round(calorieGoal * option.percentage);
+    const ratios = await calculateAverageMacros();
+
+    // Calculate grams
+    // Protein = (Total * ratio) / 4
+    // Carbs = (Total * ratio) / 4
+    // Fat = (Total * ratio) / 9
+
+    const pGrams = (targetCalories * ratios.protein) / 4;
+    const cGrams = (targetCalories * ratios.carbohydrate) / 4;
+    const fGrams = (targetCalories * ratios.lipid) / 9;
+
+    const newMeal: Omit<Meal, 'id'> = {
+      date: selectedDate,
+      name: `Estimativa: ${option.label}`,
+      calories: targetCalories,
+      protein: parseFloat(pGrams.toFixed(1)),
+      carbohydrate: parseFloat(cGrams.toFixed(1)),
+      lipid: parseFloat(fGrams.toFixed(1)),
+      items: [] // No specific items
+    };
+
+    await dbActions.addMeal(newMeal);
+    setIsQuickLogOpen(false);
+    loadMeals();
+  };
 
   // Search Effect
   useEffect(() => {
@@ -224,13 +308,28 @@ const MealsPage: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Refeições</h1>
           <p className="text-gray-500 dark:text-gray-400 text-sm">Registro diário</p>
         </div>
-        <button
-          onClick={() => openModal()}
-          className="bg-green-600 text-white p-3 rounded-full shadow-lg hover:bg-green-700 transition-colors"
-        >
-          <Plus size={24} />
-        </button>
+        <div className="flex space-x-2">
+          <button
+            onClick={() => setIsQuickLogOpen(true)}
+            className="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 p-3 rounded-full shadow-sm hover:bg-yellow-200 dark:hover:bg-yellow-900/50 transition-colors"
+          >
+            <Zap size={24} fill="currentColor" />
+          </button>
+          <button
+            onClick={() => openModal()}
+            className="bg-green-600 text-white p-3 rounded-full shadow-lg hover:bg-green-700 transition-colors"
+          >
+            <Plus size={24} />
+          </button>
+        </div>
       </header>
+
+      <QuickLogModal
+        isOpen={isQuickLogOpen}
+        onClose={() => setIsQuickLogOpen(false)}
+        onSelect={handleQuickLog}
+        calorieGoal={calorieGoal}
+      />
 
       {meals.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-10 text-gray-400 dark:text-gray-600">
